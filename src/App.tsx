@@ -1,9 +1,11 @@
 import HeroTitle from "./components/HeroTitle";
+import Navbar from "./components/Navbar";
 function App() {
 
   return (
     <>
-    <HeroTitle />
+      <Navbar />
+      <HeroTitle />
     </>
   )
 }
