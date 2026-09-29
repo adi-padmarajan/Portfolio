@@ -1,11 +1,13 @@
-import HeroTitle from "./components/HeroTitle";
-import Navbar from "./components/Navbar";
+import { About, Contact, Home, Projects } from "./pages/";
+
 function App() {
 
   return (
     <>
-      <Navbar />
-      <HeroTitle />
+      <Home />
+      <About />
+      <Projects />
+      <Contact />
     </>
   )
 }
