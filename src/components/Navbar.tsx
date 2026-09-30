@@ -38,7 +38,7 @@ function Navbar(){
     return(
         <>
             <header className="fixed inset-x-0 top-0 z-50 bg-white/80 backdrop-blur">
-                <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
+                <nav className="flex items-center justify-between px-6 py-5 md:px-10 lg:px-12">
                     <a
                         href="#top"
                         onClick={() => setIsOpen(false)}
