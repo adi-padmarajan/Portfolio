@@ -24,7 +24,7 @@ function HeroTitle(){
     return (
     <section className="flex min-h-screen flex-col items-center justify-center bg-white px-4 text-center">
         <h1 ref={titleRef} className="text-6xl font-extrabold tracking-tight text-black sm:text-8xl lg:text-9xl">
-            Hi! I am Adi.
+            I am Adi.
         </h1>
         <p ref={subtitleRef} className="mt-4 text-xl font-medium tracking-wide text-gray-500 sm:mt-6 sm:text-3xl">
             Software Developer
