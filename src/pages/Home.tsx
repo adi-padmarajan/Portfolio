@@ -1,8 +1,9 @@
-import { HeroTitle } from "../components";
+import { HeroTitle, Navbar } from "../components";
 
 function Home(){
     return(
         <>
+            <Navbar />
             <HeroTitle />
         </>
     );
