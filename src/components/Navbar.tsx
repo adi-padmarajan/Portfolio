@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react";
+import type { MouseEvent } from "react";
 
 const links = [
     { label: "Work", href: "#work" },
     { label: "About", href: "#about" },
     { label: "Contact", href: "#contact" },
 ];
+
+// Smooth, "settling" curve for things entering; quicker, softer curve for things leaving
+const EASE_OUT = "cubic-bezier(0.22, 1, 0.36, 1)";
+const EASE_IN_OUT = "cubic-bezier(0.65, 0, 0.35, 1)";
 
 function Navbar(){
     const [isOpen, setIsOpen] = useState(false);
@@ -35,6 +40,17 @@ function Navbar(){
         return () => mql.removeEventListener("change", onChange);
     }, []);
 
+    // Close the menu first, then scroll once the body scroll lock has been released,
+    // so the page glides to the section while the menu fades away
+    const handleMenuLinkClick = (e: MouseEvent<HTMLAnchorElement>, href: string) => {
+        e.preventDefault();
+        setIsOpen(false);
+        requestAnimationFrame(() => {
+            document.querySelector(href)?.scrollIntoView({ behavior: "smooth" });
+            history.pushState(null, "", href);
+        });
+    };
+
     return(
         <>
             <header className="fixed inset-x-0 top-0 z-50 bg-white/80 backdrop-blur">
@@ -60,6 +76,7 @@ function Navbar(){
                         ))}
                     </ul>
 
+                    {/* Two-stage morph: bars slide together, then rotate into an X (and the reverse on close) */}
                     <button
                         type="button"
                         onClick={() => setIsOpen((open) => !open)}
@@ -69,17 +86,29 @@ function Navbar(){
                         className="relative z-50 flex h-10 w-10 flex-col items-center justify-center gap-1.5 md:hidden"
                     >
                         <span
-                            className={`block h-0.5 w-6 bg-black transition-transform duration-300 ${
+                            style={{
+                                transitionTimingFunction: EASE_IN_OUT,
+                                transitionDelay: isOpen ? "0ms, 150ms" : "150ms, 0ms",
+                            }}
+                            className={`block h-0.5 w-6 bg-black transition-[translate,rotate] duration-200 motion-reduce:transition-none ${
                                 isOpen ? "translate-y-2 rotate-45" : ""
                             }`}
                         />
                         <span
-                            className={`block h-0.5 w-6 bg-black transition-opacity duration-300 ${
+                            style={{
+                                transitionTimingFunction: EASE_IN_OUT,
+                                transitionDelay: isOpen ? "0ms" : "150ms",
+                            }}
+                            className={`block h-0.5 w-6 bg-black transition-opacity duration-150 motion-reduce:transition-none ${
                                 isOpen ? "opacity-0" : ""
                             }`}
                         />
                         <span
-                            className={`block h-0.5 w-6 bg-black transition-transform duration-300 ${
+                            style={{
+                                transitionTimingFunction: EASE_IN_OUT,
+                                transitionDelay: isOpen ? "0ms, 150ms" : "150ms, 0ms",
+                            }}
+                            className={`block h-0.5 w-6 bg-black transition-[translate,rotate] duration-200 motion-reduce:transition-none ${
                                 isOpen ? "-translate-y-2 -rotate-45" : ""
                             }`}
                         />
@@ -87,9 +116,16 @@ function Navbar(){
                 </nav>
             </header>
 
+            {/* On close the links leave first (in reverse order), then the backdrop fades out behind them */}
             <div
                 id="mobile-menu"
-                className={`fixed inset-0 z-40 flex h-dvh flex-col items-center justify-center bg-white transition-all duration-300 md:hidden ${
+                inert={!isOpen}
+                style={{
+                    transitionTimingFunction: isOpen ? EASE_OUT : EASE_IN_OUT,
+                    transitionDuration: isOpen ? "400ms" : "300ms",
+                    transitionDelay: isOpen ? "0ms" : "100ms",
+                }}
+                className={`fixed inset-0 z-40 flex h-dvh flex-col items-center justify-center bg-white transition-[opacity,visibility] motion-reduce:transition-none md:hidden ${
                     isOpen ? "visible opacity-100" : "invisible opacity-0"
                 }`}
             >
@@ -97,15 +133,20 @@ function Navbar(){
                     {links.map((link, i) => (
                         <li
                             key={link.href}
-                            style={{ transitionDelay: isOpen ? `${100 + i * 75}ms` : "0ms" }}
-                            className={`transition-all duration-500 ${
-                                isOpen ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+                            style={{
+                                transitionTimingFunction: isOpen ? EASE_OUT : EASE_IN_OUT,
+                                transitionDuration: isOpen ? "600ms" : "200ms",
+                                transitionDelay: isOpen
+                                    ? `${150 + i * 70}ms`
+                                    : `${(links.length - 1 - i) * 40}ms`,
+                            }}
+                            className={`transition-[translate,opacity] will-change-[translate,opacity] motion-reduce:transition-none ${
+                                isOpen ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
                             }`}
                         >
                             <a
                                 href={link.href}
-                                onClick={() => setIsOpen(false)}
-                                tabIndex={isOpen ? 0 : -1}
+                                onClick={(e) => handleMenuLinkClick(e, link.href)}
                                 className="text-4xl font-extrabold tracking-tight text-black"
                             >
                                 {link.label}
