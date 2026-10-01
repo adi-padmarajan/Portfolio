@@ -36,7 +36,7 @@ function About(){
 
             <div className="mt-8 grid gap-12 md:mt-14 md:grid-cols-12 md:gap-6">
                 <p data-animate className="text-3xl leading-snug tracking-tight text-black sm:text-4xl md:col-span-7 lg:text-5xl lg:leading-tight">
-                    Software Developer at STEMCELL Technologies, building custom products for Research and Development.
+                    Software Developer at STEMCELL Technologies, building Custom Products for Research and Development.
                 </p>
 
                 <div data-animate className="flex flex-col items-start gap-10 md:col-span-4 md:col-start-9 md:gap-16 md:pt-2">
