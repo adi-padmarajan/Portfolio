@@ -37,7 +37,7 @@ function App() {
           <Navbar />
           <main id="top">
             <Home />
-            <section id="about" className="scroll-mt-20">
+            <section id="about">
               <About />
             </section>
             <section id="work" className="scroll-mt-20">

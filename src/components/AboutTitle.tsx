@@ -25,11 +25,9 @@ function AboutTitle(){
     }, []);
 
     return (
-    <div className="flex flex-col items-center bg-white px-4 pt-32 text-center">
-        <h2 ref={titleRef} className="text-5xl font-extrabold tracking-tight text-black sm:text-7xl lg:text-8xl">
-            About
-        </h2>
-    </div>
+    <h2 ref={titleRef} className="text-xs font-medium tracking-widest text-gray-400 uppercase">
+        About
+    </h2>
     );
 }
 
