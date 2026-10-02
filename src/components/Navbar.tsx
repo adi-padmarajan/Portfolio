@@ -1,11 +1,6 @@
 import { useEffect, useState } from "react";
 import type { MouseEvent } from "react";
-
-const links = [
-    { label: "About", href: "#about" },
-    { label: "Work", href: "#work" },
-    { label: "Contact", href: "#contact" },
-];
+import { NAV_LINKS as links } from "./navLinks";
 
 // Smooth, "settling" curve for things entering; quicker, softer curve for things leaving
 const EASE_OUT = "cubic-bezier(0.22, 1, 0.36, 1)";

@@ -1,6 +1,5 @@
 export { default as HeroTitle } from "./HeroTitle";
 export { default as Navbar } from "./Navbar";
-export { default as Footer } from "./Footer";
 export { default as AboutTitle } from "./AboutTitle";
 export { default as InfoBlock } from "./InfoBlock";
 export { default as CurrentRole } from "./CurrentRole";
@@ -13,3 +12,8 @@ export { default as CopyEmailButton } from "./CopyEmailButton";
 export { default as SocialLink } from "./SocialLink";
 export { default as SocialLinks } from "./SocialLinks";
 export { EMAIL, SOCIAL_LINKS } from "./contactDetails";
+export { default as BackToTopLink } from "./BackToTopLink";
+export { default as FooterColumn } from "./FooterColumn";
+export { default as FooterLink } from "./FooterLink";
+export { default as FooterSignoff } from "./FooterSignoff";
+export { NAV_LINKS } from "./navLinks";
