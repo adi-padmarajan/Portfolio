@@ -36,7 +36,7 @@ function App() {
         <>
           <Navbar />
           <main id="top">
-            <Home />
+            <Home introActive={showIntro} />
             <section id="about">
               <About />
             </section>

@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
+import { GREETING_TEXT } from "../components/greetingText";
 
 const greetings = [
     { text: "你好", lang: "zh" },
@@ -65,7 +66,7 @@ function Languages({ onReveal, onComplete }: LanguagesProps){
                         key={greeting.lang}
                         ref={(el) => { if (el) wordRefs.current[i] = el; }}
                         lang={greeting.lang}
-                        className="invisible [grid-area:1/1] whitespace-nowrap text-5xl font-extrabold tracking-tight text-black sm:text-7xl lg:text-8xl"
+                        className={`invisible [grid-area:1/1] ${GREETING_TEXT}`}
                     >
                         {greeting.text}
                     </span>
