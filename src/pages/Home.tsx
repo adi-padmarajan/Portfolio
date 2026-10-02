@@ -1,9 +1,9 @@
 import { HeroTitle } from "../components";
 
-function Home(){
+function Home({ introActive }: { introActive: boolean }){
     return(
         <>
-            <HeroTitle />
+            <HeroTitle introActive={introActive} />
         </>
     );
 }
