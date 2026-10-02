@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { Navbar } from "./components";
-import { About, Contact, Home, Languages, Projects } from "./pages/";
+import { About, Contact, Footer, Home, Languages, Projects } from "./pages/";
 
 const INTRO_SEEN_KEY = "introSeen";
 
@@ -47,6 +47,7 @@ function App() {
               <Contact />
             </section>
           </main>
+          <Footer />
         </>
       )}
     </>
