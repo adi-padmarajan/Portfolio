@@ -1,14 +1,14 @@
 import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { AboutTitle, CircleButton } from "../components";
+import { AboutTitle, CircleButton, Education } from "../components";
 
 gsap.registerPlugin(ScrollTrigger);
 
 function About(){
     const contentRef = useRef<HTMLDivElement>(null);
 
-    // Fade the statement and supporting text in one after another as they scroll into view
+    // Fade the statement, supporting text, education and button in one after another as they scroll into view
     useLayoutEffect(() => {
         const ctx = gsap.context(() => {
             gsap.from("[data-animate]", {
@@ -30,20 +30,27 @@ function About(){
     return(
         <div
             ref={contentRef}
-            className="mx-auto flex min-h-svh max-w-6xl flex-col justify-center bg-white px-6 pt-24 pb-16 md:px-10 lg:px-12"
+            className="mx-auto flex min-h-svh max-w-6xl flex-col justify-center bg-white px-6 pt-24 pb-8 sm:pb-16 md:px-10 lg:px-12"
         >
             <AboutTitle />
 
-            <div className="mt-8 grid gap-12 md:mt-14 md:grid-cols-12 md:gap-6">
-                <p data-animate className="text-3xl leading-snug tracking-tight text-black sm:text-4xl md:col-span-7 lg:text-5xl lg:leading-tight">
+            <div className="mt-6 grid gap-6 sm:mt-8 sm:gap-12 md:mt-14 md:grid-cols-12 md:gap-6">
+                <p data-animate className="text-2xl leading-snug tracking-tight text-black sm:text-4xl md:col-span-7 lg:text-5xl lg:leading-tight">
                     Software Developer at STEMCELL Technologies, building Custom Products for Research and Development.
                 </p>
 
-                <div data-animate className="flex flex-col items-start gap-10 md:col-span-4 md:col-start-9 md:gap-16 md:pt-2">
-                    <p className="text-base leading-relaxed text-gray-600 sm:text-lg">
-                        I work in the Software Development Engineering (SDE) team, turning lab needs into reliable, purpose-built software.
-                    </p>
-                    <CircleButton href="#contact">Get in touch</CircleButton>
+                <div className="flex flex-col gap-6 sm:gap-10 md:col-span-4 md:col-start-9 md:gap-12 md:pt-2">
+                    {/* Education reads as a caption to the supporting text, so keep them close */}
+                    <div className="flex flex-col gap-3 sm:gap-4">
+                        <p data-animate className="text-sm leading-relaxed text-gray-600 sm:text-lg">
+                            I work in the Software Development Engineering (SDE) team, turning lab needs into reliable, purpose-built software.
+                        </p>
+                        <Education />
+                    </div>
+
+                    <div data-animate>
+                        <CircleButton href="#contact">Get in touch</CircleButton>
+                    </div>
                 </div>
             </div>
         </div>
