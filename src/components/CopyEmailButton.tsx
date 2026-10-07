@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { EMAIL } from "./contactDetails";
+import { PILL_CLASSES } from "./PillLink";
 
 const RESET_DELAY_MS = 2000;
 
@@ -23,12 +24,8 @@ function CopyEmailButton(){
     };
 
     return(
-        <button
-            type="button"
-            onClick={handleCopy}
-            className="text-xs font-medium tracking-widest text-gray-400 uppercase transition-colors hover:text-black"
-        >
-            <span aria-live="polite">{copied ? "Copied" : "Copy"}</span>
+        <button type="button" onClick={handleCopy} className={PILL_CLASSES}>
+            <span aria-live="polite">{copied ? "Copied" : "Copy email"}</span>
         </button>
     );
 }

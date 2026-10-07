@@ -3,7 +3,7 @@ function BackToTopLink(){
     return(
         <a
             href="#top"
-            className="group inline-flex items-center gap-2 transition-colors hover:text-black"
+            className="group inline-flex items-center gap-2 transition-colors hover:text-white"
         >
             Back to top
             <span

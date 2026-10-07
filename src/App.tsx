@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { Navbar } from "./components";
-import { About, Contact, Footer, Home, Languages, Projects } from "./pages/";
+import { About, Contact, Home, Languages, Projects } from "./pages/";
 
 const INTRO_SEEN_KEY = "introSeen";
 
@@ -43,11 +43,10 @@ function App() {
             <section id="work" className="scroll-mt-20">
               <Projects />
             </section>
-            <section id="contact" className="scroll-mt-20">
+            <section id="contact">
               <Contact />
             </section>
           </main>
-          <Footer />
         </>
       )}
     </>

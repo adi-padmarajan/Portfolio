@@ -25,7 +25,7 @@ function ContactTitle(){
     }, []);
 
     return (
-    <h2 ref={titleRef} className="text-xs font-medium tracking-widest text-gray-400 uppercase">
+    <h2 ref={titleRef} className="text-xs font-medium tracking-widest text-white/40 uppercase">
         Contact
     </h2>
     );

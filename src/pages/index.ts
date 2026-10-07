@@ -4,4 +4,3 @@ export { default as Contact } from "./Contact";
 export { default as Projects } from "./Projects";
 export { default as Marathons } from "./Marathons";
 export { default as Languages } from "./Languages";
-export { default as Footer } from "./Footer";

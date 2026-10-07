@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { MouseEvent } from "react";
 import { NAV_LINKS as links } from "./navLinks";
 
@@ -6,8 +6,19 @@ import { NAV_LINKS as links } from "./navLinks";
 const EASE_OUT = "cubic-bezier(0.22, 1, 0.36, 1)";
 const EASE_IN_OUT = "cubic-bezier(0.65, 0, 0.35, 1)";
 
+// One shared fade for the light/dark switch; the logo, links and icon inherit the header's colour so they move together
+const THEME_TRANSITION = { transitionDuration: "500ms", transitionTimingFunction: EASE_IN_OUT };
+
+// Sections with a dark background; the navbar inverts while one sits underneath it
+const DARK_SECTIONS = ["#contact"];
+
 function Navbar(){
     const [isOpen, setIsOpen] = useState(false);
+    const [overDark, setOverDark] = useState(false);
+    const headerRef = useRef<HTMLElement>(null);
+
+    // The open menu is white, so the bar stays light on top of it
+    const isDark = overDark && !isOpen;
 
     // Lock page scroll while the full-screen menu is open, and close it on Escape
     useEffect(() => {
@@ -35,6 +46,27 @@ function Navbar(){
         return () => mql.removeEventListener("change", onChange);
     }, []);
 
+    // Check whether a dark section sits under the middle of the navbar as the page scrolls or resizes,
+    // so the switch lands while the section's edge is passing behind the bar
+    useEffect(() => {
+        const update = () => {
+            const edge = (headerRef.current?.offsetHeight ?? 0) / 2;
+            setOverDark(
+                DARK_SECTIONS.some((selector) => {
+                    const rect = document.querySelector(selector)?.getBoundingClientRect();
+                    return rect !== undefined && rect.top <= edge && rect.bottom > edge;
+                }),
+            );
+        };
+        update();
+        window.addEventListener("scroll", update, { passive: true });
+        window.addEventListener("resize", update);
+        return () => {
+            window.removeEventListener("scroll", update);
+            window.removeEventListener("resize", update);
+        };
+    }, []);
+
     // Close the menu first, then scroll once the body scroll lock has been released,
     // so the page glides to the section while the menu fades away
     const handleMenuLinkClick = (e: MouseEvent<HTMLAnchorElement>, href: string) => {
@@ -48,12 +80,18 @@ function Navbar(){
 
     return(
         <>
-            <header className="fixed inset-x-0 top-0 z-50 bg-white/80 backdrop-blur">
+            <header
+                ref={headerRef}
+                style={THEME_TRANSITION}
+                className={`fixed inset-x-0 top-0 z-50 backdrop-blur transition-colors motion-reduce:transition-none ${
+                    isDark ? "bg-neutral-950/80 text-white" : "bg-white/80 text-black"
+                }`}
+            >
                 <nav className="flex items-center justify-between px-6 py-5 md:px-10 lg:px-12">
                     <a
                         href="#top"
                         onClick={() => setIsOpen(false)}
-                        className="relative z-50 text-lg font-bold tracking-tight text-black"
+                        className="relative z-50 text-lg font-bold tracking-tight"
                     >
                         Aditya Padmarajan
                     </a>
@@ -63,7 +101,7 @@ function Navbar(){
                             <li key={link.href}>
                                 <a
                                     href={link.href}
-                                    className="text-sm font-medium text-black/70 transition-colors hover:text-black"
+                                    className="text-sm font-medium opacity-70 transition-opacity hover:opacity-100"
                                 >
                                     {link.label}
                                 </a>
@@ -85,7 +123,7 @@ function Navbar(){
                                 transitionTimingFunction: EASE_IN_OUT,
                                 transitionDelay: isOpen ? "0ms, 150ms" : "150ms, 0ms",
                             }}
-                            className={`block h-0.5 w-6 bg-black transition-[translate,rotate] duration-200 motion-reduce:transition-none ${
+                            className={`block h-0.5 w-6 bg-current transition-[translate,rotate] duration-200 motion-reduce:transition-none ${
                                 isOpen ? "translate-y-2 rotate-45" : ""
                             }`}
                         />
@@ -94,7 +132,7 @@ function Navbar(){
                                 transitionTimingFunction: EASE_IN_OUT,
                                 transitionDelay: isOpen ? "0ms" : "150ms",
                             }}
-                            className={`block h-0.5 w-6 bg-black transition-opacity duration-150 motion-reduce:transition-none ${
+                            className={`block h-0.5 w-6 bg-current transition-opacity duration-150 motion-reduce:transition-none ${
                                 isOpen ? "opacity-0" : ""
                             }`}
                         />
@@ -103,7 +141,7 @@ function Navbar(){
                                 transitionTimingFunction: EASE_IN_OUT,
                                 transitionDelay: isOpen ? "0ms, 150ms" : "150ms, 0ms",
                             }}
-                            className={`block h-0.5 w-6 bg-black transition-[translate,rotate] duration-200 motion-reduce:transition-none ${
+                            className={`block h-0.5 w-6 bg-current transition-[translate,rotate] duration-200 motion-reduce:transition-none ${
                                 isOpen ? "-translate-y-2 -rotate-45" : ""
                             }`}
                         />

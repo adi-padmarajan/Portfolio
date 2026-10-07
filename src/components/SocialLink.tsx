@@ -5,12 +5,12 @@ function SocialLink({ label, href }: { label: string; href: string }){
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className="group inline-flex items-center gap-2 text-sm text-black sm:text-lg"
+            className="group inline-flex items-center gap-2 text-white/80 transition-colors hover:text-white"
         >
             {label}
             <span
                 aria-hidden="true"
-                className="text-gray-400 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-black"
+                className="text-white/40 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-white"
             >
                 ↗
             </span>
