@@ -3,15 +3,16 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
 import { MOTION_OK } from "../lib/motion";
-import { AboutFact, AboutTitle, ArrowLink } from "../components";
+import { AboutTitle, CircleButton, Education } from "../components";
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
 function About(){
     const sectionRef = useRef<HTMLDivElement>(null);
     const statementRef = useRef<HTMLParagraphElement>(null);
-    const detailRef = useRef<HTMLDivElement>(null);
-    const factsRef = useRef<HTMLDivElement>(null);
+    const ruleRef = useRef<HTMLDivElement>(null);
+    const buttonRef = useRef<HTMLDivElement>(null);
+    const detailsRef = useRef<HTMLDivElement>(null);
 
     useLayoutEffect(() => {
         const mm = gsap.matchMedia(sectionRef);
@@ -26,42 +27,31 @@ function About(){
                 scrollTrigger: {
                     trigger: statementRef.current,
                     start: "top 80%",
-                    end: "bottom 45%",
+                    end: "bottom 50%",
                     scrub: true,
                 },
             });
 
-            // The supporting paragraph and link follow once the statement has had its moment
-            gsap.from(detailRef.current?.children ?? [], {
-                y: 24,
-                autoAlpha: 0,
-                duration: 0.9,
-                ease: "power3.out",
-                stagger: 0.12,
-                scrollTrigger: {
-                    trigger: detailRef.current,
-                    start: "top 85%",
-                },
-            });
-
-            // Each fact's hairline draws across, left to right, and its text settles in just behind it
+            // The rule draws across, the button settles onto it, then the details below follow
             gsap.timeline({
                 defaults: { ease: "power3.out" },
                 scrollTrigger: {
-                    trigger: factsRef.current,
+                    trigger: ruleRef.current,
                     start: "top 85%",
                 },
             })
-              .from("[data-fact-rule]", { scaleX: 0, duration: 1.1, ease: "power4.inOut", stagger: 0.12 })
-              .from("[data-fact-content]", { y: 16, autoAlpha: 0, duration: 0.8, stagger: 0.12 }, "-=0.7");
+              .from(ruleRef.current, { scaleX: 0, duration: 1.2, ease: "power4.inOut" })
+              .from(buttonRef.current, { scale: 0.6, autoAlpha: 0, duration: 0.9, ease: "back.out(1.6)" }, "-=0.5")
+              .from(detailsRef.current?.children ?? [], { y: 24, autoAlpha: 0, duration: 0.9, stagger: 0.12 }, "-=0.6");
 
             return () => split.revert();
         });
         return () => mm.revert();
     }, []);
 
-    // Three quiet tiers with plenty of air between them: one statement, a short paragraph to explain it,
-    // and a row of facts to scan. The top padding clears the fixed navbar.
+    // The same structure as Contact, so the two sections read as one system: a statement, a rule with the
+    // round button resting on it, and the details beneath. Plenty of air between each tier; the top padding
+    // clears the fixed navbar.
     return(
         <div
             ref={sectionRef}
@@ -69,37 +59,32 @@ function About(){
         >
             <AboutTitle />
 
+            {/* Role and company in black carry the statement; the rest recedes in grey */}
             <p
                 ref={statementRef}
-                className="mt-8 max-w-4xl text-4xl leading-[1.1] font-medium tracking-tight text-black sm:mt-10 sm:text-5xl lg:text-6xl"
+                className="mt-8 max-w-5xl text-3xl leading-[1.15] font-medium tracking-tight text-gray-400 sm:mt-10 sm:text-5xl lg:text-6xl lg:leading-[1.1]"
             >
-                I turn lab needs into reliable, purpose&#8209;built software.
+                <span className="text-black">Software Developer at STEMCELL&nbsp;Technologies,</span>{" "}
+                building Custom Products for Research and Development.
             </p>
 
-            <div ref={detailRef} className="mt-12 flex flex-col gap-8 sm:mt-16 md:ml-auto md:w-1/2 md:pl-6">
-                <p className="text-lg leading-relaxed text-gray-600 sm:text-xl">
-                    I&rsquo;m a Software Developer on the Software Development Engineering team at
-                    STEMCELL&nbsp;Technologies, building custom products for Research and Development.
-                </p>
-                <div>
-                    <ArrowLink href="#contact">Get in touch</ArrowLink>
+            {/* The button straddles the rule, as if it were resting on it */}
+            <div className="relative mt-20 sm:mt-28">
+                <div ref={ruleRef} className="h-px origin-left bg-gray-200" />
+                <div className="absolute top-1/2 right-0 -translate-y-1/2 sm:right-12 lg:right-24">
+                    <div ref={buttonRef}>
+                        <CircleButton href="#contact">Get in touch</CircleButton>
+                    </div>
                 </div>
             </div>
 
-            <div ref={factsRef} className="mt-24 grid gap-10 sm:mt-32 md:grid-cols-3 md:gap-8">
-                <AboutFact label="Currently">
-                    Software Developer
-                    <br />
-                    STEMCELL Technologies
-                </AboutFact>
-                <AboutFact label="Education">
-                    BSc Computer Science
-                    <br />
-                    University of Victoria
-                </AboutFact>
-                <AboutFact label="Outside work">
-                    Running marathons
-                </AboutFact>
+            <div ref={detailsRef} className="mt-20 grid gap-10 sm:mt-28 md:grid-cols-12 md:gap-6">
+                <p className="text-lg leading-relaxed text-gray-600 sm:text-xl md:col-span-5">
+                    On the Software Development Engineering team, I turn lab needs into reliable, purpose-built software.
+                </p>
+                <div className="md:col-span-3 md:col-start-7">
+                    <Education />
+                </div>
             </div>
         </div>
     );

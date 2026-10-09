@@ -2,6 +2,15 @@
 /* Lenis drives scrolling, so the native smooth scroll would fight it; these are its required base styles */
 @import "lenis/dist/lenis.css";
 
+/* One clear, on-brand focus ring for keyboard users instead of the browser's default blue box.
+   It follows the element's colour and rounding, and never shows for mouse clicks. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 4px;
+  }
+}
+
 @theme {
   /* A short segment travelling down the hero's scroll cue */
   --animate-scroll-cue: scroll-cue 2.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;

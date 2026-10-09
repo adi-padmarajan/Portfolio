@@ -1,8 +1,7 @@
 export { default as HeroTitle } from "./HeroTitle";
 export { default as Navbar } from "./Navbar";
 export { default as AboutTitle } from "./AboutTitle";
-export { default as AboutFact } from "./AboutFact";
-export { default as ArrowLink } from "./ArrowLink";
+export { default as Education } from "./Education";
 export { default as CircleButton } from "./CircleButton";
 export { default as ContactTitle } from "./ContactTitle";
 export { default as CopyEmailButton } from "./CopyEmailButton";
