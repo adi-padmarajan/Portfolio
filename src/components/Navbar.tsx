@@ -80,6 +80,7 @@ function Navbar(){
         <>
             <header
                 ref={headerRef}
+                data-site-header
                 style={THEME_TRANSITION}
                 className={`fixed inset-x-0 top-0 z-50 backdrop-blur transition-colors motion-reduce:transition-none ${
                     isDark ? "bg-neutral-950/80 text-white" : "bg-white/80 text-black"

@@ -41,8 +41,7 @@ function App() {
           <Navbar />
           <main id="top">
             <Home introActive={showIntro} />
-            {/* Sits above the pinned hero, so it rises over the name as the page scrolls */}
-            <section id="about" className="relative z-10 bg-white">
+            <section id="about">
               <About />
             </section>
             <section id="work" className="scroll-mt-20">

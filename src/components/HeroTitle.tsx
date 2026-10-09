@@ -1,18 +1,21 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { SplitText } from "gsap/SplitText";
 import { ScrambleTextPlugin } from "gsap/ScrambleTextPlugin";
-import { GREETING_TEXT } from "./greetingText";
 import HeroDetail from "./HeroDetail";
 import LocalTime from "./LocalTime";
 import ScrollCue from "./ScrollCue";
+import Wordmark from "./Wordmark";
+import { A_COUNTER, WORDMARK_HEIGHT, WORDMARK_WIDTH } from "./wordmarkGeometry";
 import { MOTION_OK } from "../lib/motion";
 
-gsap.registerPlugin(ScrollTrigger, SplitText, ScrambleTextPlugin);
+gsap.registerPlugin(ScrollTrigger, ScrambleTextPlugin);
 
 // The subtitle cycles through these, starting with the first
 const ROLES = ["Software Developer", "Marathon Runner"];
+
+// Scale the wordmark about the A's counter, so the counter stays put while everything else rushes outward
+const ZOOM_ORIGIN = `${(A_COUNTER.x / WORDMARK_WIDTH) * 100}% ${(A_COUNTER.y / WORDMARK_HEIGHT) * 100}%`;
 
 type HeroTitleProps = {
     // True while the intro overlay is still on screen
@@ -21,27 +24,20 @@ type HeroTitleProps = {
 
 function HeroTitle({ introActive }: HeroTitleProps){
     const sectionRef = useRef<HTMLElement>(null);
-    const stageRef = useRef<HTMLDivElement>(null);
-    const titleRef = useRef<HTMLHeadingElement>(null);
+    const leadRef = useRef<HTMLSpanElement>(null);
+    const markRef = useRef<HTMLSpanElement>(null);
+    const lettersRef = useRef<SVGGElement>(null);
     const subtitleRef = useRef<HTMLParagraphElement>(null);
     const roleRef = useRef<HTMLSpanElement>(null);
     const detailsRef = useRef<HTMLDivElement>(null);
-    // Whether this visit started with the intro; read once on mount
+    // The site mounts as the intro overlay starts sliding away, so this is read once, on mount
     const [followsIntro] = useState(introActive);
 
-    // Entrance. The details enter item by item, while scrolling away fades their shared container,
-    // so the two animations never fight over the same element
+    // Entrance: the letters rise out of the wordmark's edge one after another, then the lines around them
+    // slide out of their own masks. Each mask (the outer element) is left free for the scroll animation below.
     useLayoutEffect(() => {
         const mm = gsap.matchMedia();
         mm.add(MOTION_OK, () => {
-            const details = detailsRef.current?.children ?? [];
-
-            // Keep the subtitle and details hidden while the overlay slides away, so they can enter once the page is clear
-            if (introActive) {
-                gsap.set([subtitleRef.current, details], { autoAlpha: 0 });
-                return;
-            }
-
             // Swap roles with a brief scramble, holding each one long enough to read
             const cycle = gsap.timeline({ paused: true, repeat: -1 });
             ROLES.forEach((_, i) => {
@@ -56,84 +52,112 @@ function HeroTitle({ introActive }: HeroTitleProps){
                 }, "+=2.8");
             });
 
-            const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-            let split: SplitText | undefined;
-            // After the intro, the overlay sliding off is the name's entrance, so only the rest animates.
-            // Otherwise each letter rises out of a mask, one after another.
-            if (!followsIntro) {
-                split = SplitText.create(titleRef.current, { type: "words,chars", mask: "words" });
-                tl.from(split.chars, {
-                    yPercent: 110,
-                    duration: 1.1,
-                    ease: "power4.out",
-                    stagger: 0.045,
-                });
-            }
-            tl.fromTo(subtitleRef.current, {
-                y: 20,
-                autoAlpha: 0,
-            }, {
-                y: 0,
-                autoAlpha: 1,
-                duration: 0.8,
-            }, followsIntro ? 0 : "-=0.6")
-              .fromTo(details, {
+            // After the intro, start while the overlay is still lifting, so the name rises into the space it uncovers
+            gsap.timeline({ delay: followsIntro ? 0.45 : 0.15, defaults: { ease: "power4.out" } })
+              .from(lettersRef.current?.children ?? [], {
+                y: WORDMARK_HEIGHT * 1.1,
+                duration: 1.3,
+                stagger: 0.09,
+            })
+              .from([leadRef.current?.firstElementChild, subtitleRef.current?.firstElementChild], {
+                yPercent: 110,
+                duration: 1,
+            }, "-=0.9")
+              .from(detailsRef.current?.children ?? [], {
                 y: 12,
                 autoAlpha: 0,
-            }, {
-                y: 0,
-                autoAlpha: 1,
                 duration: 0.8,
                 stagger: 0.1,
-            }, "-=0.5")
+                ease: "power3.out",
+            }, "-=0.6")
               .add(() => { cycle.play(); });
-
-            return () => split?.revert();
         });
         return () => mm.revert();
-    }, [introActive, followsIntro]);
+    }, [followsIntro]);
 
-    // Scrolling away: the hero holds still while About rises over it, and the name drifts forward into a blur,
-    // like a cut between scenes
+    // Scrolling: the hero holds still while the camera dives into the A. The counter grows until it swallows
+    // the screen, and its white opens straight onto About.
     useLayoutEffect(() => {
         const mm = gsap.matchMedia();
         mm.add(MOTION_OK, () => {
+            const mark = markRef.current!;
+            const section = sectionRef.current!;
+            const header = document.querySelector("[data-site-header]");
+            const zoom = { progress: 0 };
+            let maxScale = 1;
+
+            // How far to scale before the counter's incircle covers every corner of the screen
+            const measure = () => {
+                const scale = gsap.getProperty(mark, "scale") as number;
+                const rect = mark.getBoundingClientRect();
+                const top = section.getBoundingClientRect().top;
+                // The counter is the transform origin, so its position on screen is the same at any scale
+                const x = rect.left + (A_COUNTER.x / WORDMARK_WIDTH) * rect.width;
+                const y = rect.top - top + (A_COUNTER.y / WORDMARK_HEIGHT) * rect.height;
+                const reach = Math.max(
+                    Math.hypot(x, y),
+                    Math.hypot(window.innerWidth - x, y),
+                    Math.hypot(x, window.innerHeight - y),
+                    Math.hypot(window.innerWidth - x, window.innerHeight - y),
+                );
+                const radius = (A_COUNTER.r / WORDMARK_HEIGHT) * (rect.height / scale);
+                maxScale = (reach / radius) * 1.05;
+            };
+            // Scale exponentially: equal scroll distances feel like equal distances travelled, like a camera dolly
+            const applyZoom = () => gsap.set(mark, { scale: maxScale ** zoom.progress });
+
+            measure();
             gsap.timeline({
                 defaults: { ease: "none" },
                 scrollTrigger: {
-                    trigger: sectionRef.current,
+                    trigger: section,
                     start: "top top",
-                    end: "bottom top",
+                    end: "+=120%",
                     pin: true,
-                    pinSpacing: false,
                     scrub: true,
+                    onRefresh: () => {
+                        measure();
+                        applyZoom();
+                    },
                 },
             })
-              .to(detailsRef.current, { autoAlpha: 0, duration: 0.2 }, 0)
-              // About reaches the middle of the screen halfway through, so the name is gone by then
-              .to(stageRef.current, {
-                scale: 1.12,
-                filter: "blur(12px)",
-                autoAlpha: 0,
-                duration: 0.5,
-            }, 0)
-              // Hold the pin until About covers the hero completely
-              .to({}, { duration: 0.5 });
+              // The words around the name part to let it through
+              .to(leadRef.current, { yPercent: -60, autoAlpha: 0, duration: 0.15 }, 0)
+              .to(subtitleRef.current, { yPercent: 60, autoAlpha: 0, duration: 0.15 }, 0)
+              .to(detailsRef.current, { autoAlpha: 0, duration: 0.1 }, 0)
+              .to(zoom, { progress: 1, duration: 1, ease: "power1.in", onUpdate: applyZoom }, 0)
+              // The navbar's frosted white would turn grey over the letters, so it steps aside for the shot
+              // and returns once the counter has turned the screen white
+              .to(header, { yPercent: -100, duration: 0.08 }, 0)
+              .to(header, { yPercent: 0, duration: 0.08 }, 0.92);
         });
         return () => mm.revert();
     }, []);
 
-    // The subtitle hangs below the name, out of flow, so the name is centred exactly where the intro's "Hello" was.
-    // Screen readers get every role at once instead of the changing text.
+    // "I am" sits on the wordmark's left edge and the role on its right, like a title card's credits.
+    // Screen readers hear "I am Adi", then every role at once instead of the changing text.
     return (
-    <section ref={sectionRef} className="relative flex min-h-svh flex-col items-center justify-center overflow-hidden bg-white px-4 text-center">
-        <div ref={stageRef} className="relative">
-            <h1 ref={titleRef} className={GREETING_TEXT}>
-                I am Adi
+    <section ref={sectionRef} className="relative flex min-h-svh flex-col items-center justify-center overflow-hidden bg-white px-6 md:px-10 lg:px-12">
+        <div className="w-full max-w-[calc(52svh*1.9)]">
+            <h1>
+                <span ref={leadRef} className="block overflow-hidden text-sm font-medium tracking-[0.3em] text-gray-400 uppercase sm:text-base">
+                    <span className="block">I am</span>
+                </span>
+                <span className="sr-only">Adi</span>
+                <span
+                    ref={markRef}
+                    aria-hidden="true"
+                    style={{ transformOrigin: ZOOM_ORIGIN }}
+                    className="mt-3 block text-black sm:mt-5"
+                >
+                    <Wordmark letterRef={lettersRef} />
+                </span>
             </h1>
-            <p ref={subtitleRef} className="absolute top-full left-1/2 mt-4 -translate-x-1/2 whitespace-nowrap text-xl font-medium tracking-wide text-gray-500 sm:mt-6 sm:text-3xl">
-                <span className="sr-only">{ROLES.join(" and ")}</span>
-                <span ref={roleRef} aria-hidden="true">{ROLES[0]}</span>
+            <p ref={subtitleRef} className="mt-3 flex justify-end overflow-hidden text-lg font-medium tracking-wide text-gray-500 sm:mt-5 sm:text-2xl lg:text-3xl">
+                <span className="block whitespace-nowrap">
+                    <span className="sr-only">{ROLES.join(" and ")}</span>
+                    <span ref={roleRef} aria-hidden="true">{ROLES[0]}</span>
+                </span>
             </p>
         </div>
 
