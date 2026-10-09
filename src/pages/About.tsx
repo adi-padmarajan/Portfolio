@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { MOTION_OK } from "../lib/motion";
 import { AboutTitle, CircleButton, Education } from "../components";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -10,7 +11,8 @@ function About(){
 
     // Fade the statement, supporting text, education and button in one after another as they scroll into view
     useLayoutEffect(() => {
-        const ctx = gsap.context(() => {
+        const mm = gsap.matchMedia(contentRef);
+        mm.add(MOTION_OK, () => {
             gsap.from("[data-animate]", {
                 y: 30,
                 opacity: 0,
@@ -22,8 +24,8 @@ function About(){
                     start: "top 85%",
                 },
             });
-        }, contentRef);
-        return () => ctx.revert();
+        });
+        return () => mm.revert();
     }, []);
 
     // Fill exactly one screen and centre the content; the top padding clears the fixed navbar

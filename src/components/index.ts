@@ -14,3 +14,5 @@ export { default as BackToTopLink } from "./BackToTopLink";
 export { default as FooterItem } from "./FooterItem";
 export { default as LocalTime } from "./LocalTime";
 export { NAV_LINKS } from "./navLinks";
+export { default as HeroDetail } from "./HeroDetail";
+export { default as ScrollCue } from "./ScrollCue";
