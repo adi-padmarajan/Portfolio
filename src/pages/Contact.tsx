@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { MOTION_OK } from "../lib/motion";
 import {
     BackToTopLink,
     CircleButton,
@@ -21,7 +22,8 @@ function Contact(){
 
     // Fade the headline, button and email pills in one after another as they scroll into view
     useLayoutEffect(() => {
-        const ctx = gsap.context(() => {
+        const mm = gsap.matchMedia(contentRef);
+        mm.add(MOTION_OK, () => {
             gsap.from("[data-animate]", {
                 y: 30,
                 opacity: 0,
@@ -33,8 +35,8 @@ function Contact(){
                     start: "top 85%",
                 },
             });
-        }, contentRef);
-        return () => ctx.revert();
+        });
+        return () => mm.revert();
     }, []);
 
     const year = new Date().getFullYear();

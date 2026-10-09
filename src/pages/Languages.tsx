@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { GREETING_TEXT } from "../components/greetingText";
+import { lockScroll, unlockScroll } from "../lib/smoothScroll";
 
 const greetings = [
     { text: "你好", lang: "zh" },
@@ -27,7 +28,7 @@ function Languages({ onReveal, onComplete }: LanguagesProps){
     const wordRefs = useRef<HTMLSpanElement[]>([]);
 
     useLayoutEffect(() => {
-        document.body.style.overflow = "hidden";
+        lockScroll();
 
         const ctx = gsap.context(() => {
             const words = wordRefs.current;
@@ -49,7 +50,7 @@ function Languages({ onReveal, onComplete }: LanguagesProps){
 
         return () => {
             ctx.revert();
-            document.body.style.overflow = "";
+            unlockScroll();
         };
     }, [onReveal, onComplete]);
 

@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { MOTION_OK } from "../lib/motion";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -9,7 +10,8 @@ function ContactTitle(){
 
     // Play when the title scrolls into view, since it sits near the bottom of the page
     useLayoutEffect(() => {
-        const ctx = gsap.context(() => {
+        const mm = gsap.matchMedia();
+        mm.add(MOTION_OK, () => {
             gsap.from(titleRef.current, {
                 y: 40,
                 opacity: 0,
@@ -21,7 +23,7 @@ function ContactTitle(){
                 },
             });
         });
-        return () => ctx.revert();
+        return () => mm.revert();
     }, []);
 
     return (

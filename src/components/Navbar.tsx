@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { MouseEvent } from "react";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { NAV_LINKS as links } from "./navLinks";
+import { lockScroll, scrollToHash, unlockScroll } from "../lib/smoothScroll";
 
 // Smooth, "settling" curve for things entering; quicker, softer curve for things leaving
 const EASE_OUT = "cubic-bezier(0.22, 1, 0.36, 1)";
@@ -24,14 +26,14 @@ function Navbar(){
     useEffect(() => {
         if (!isOpen) return;
 
-        document.body.style.overflow = "hidden";
+        lockScroll();
         const onKeyDown = (e: KeyboardEvent) => {
             if (e.key === "Escape") setIsOpen(false);
         };
         window.addEventListener("keydown", onKeyDown);
 
         return () => {
-            document.body.style.overflow = "";
+            unlockScroll();
             window.removeEventListener("keydown", onKeyDown);
         };
     }, [isOpen]);
@@ -46,25 +48,24 @@ function Navbar(){
         return () => mql.removeEventListener("change", onChange);
     }, []);
 
-    // Check whether a dark section sits under the middle of the navbar as the page scrolls or resizes,
-    // so the switch lands while the section's edge is passing behind the bar
+    // Invert while a dark section sits under the middle of the navbar, so the switch lands as the section's edge
+    // passes behind the bar. ScrollTrigger only reports crossings, rather than measuring on every scroll event.
     useEffect(() => {
-        const update = () => {
-            const edge = (headerRef.current?.offsetHeight ?? 0) / 2;
-            setOverDark(
-                DARK_SECTIONS.some((selector) => {
-                    const rect = document.querySelector(selector)?.getBoundingClientRect();
-                    return rect !== undefined && rect.top <= edge && rect.bottom > edge;
-                }),
-            );
-        };
-        update();
-        window.addEventListener("scroll", update, { passive: true });
-        window.addEventListener("resize", update);
-        return () => {
-            window.removeEventListener("scroll", update);
-            window.removeEventListener("resize", update);
-        };
+        const edge = () => (headerRef.current?.offsetHeight ?? 0) / 2;
+        const active = new Set<string>();
+        const triggers = DARK_SECTIONS.map((selector) =>
+            ScrollTrigger.create({
+                trigger: selector,
+                start: () => `top ${edge()}`,
+                end: () => `bottom ${edge()}`,
+                onToggle: (self) => {
+                    if (self.isActive) active.add(selector);
+                    else active.delete(selector);
+                    setOverDark(active.size > 0);
+                },
+            }),
+        );
+        return () => triggers.forEach((t) => t.kill());
     }, []);
 
     // Close the menu first, then scroll once the body scroll lock has been released,
@@ -72,10 +73,7 @@ function Navbar(){
     const handleMenuLinkClick = (e: MouseEvent<HTMLAnchorElement>, href: string) => {
         e.preventDefault();
         setIsOpen(false);
-        requestAnimationFrame(() => {
-            document.querySelector(href)?.scrollIntoView({ behavior: "smooth" });
-            history.pushState(null, "", href);
-        });
+        requestAnimationFrame(() => scrollToHash(href));
     };
 
     return(

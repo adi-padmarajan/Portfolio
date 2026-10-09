@@ -1,5 +1,7 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Navbar } from "./components";
+import { prefersReducedMotion } from "./lib/motion";
+import { initSmoothScroll } from "./lib/smoothScroll";
 import { About, Contact, Home, Languages, Projects } from "./pages/";
 
 const INTRO_SEEN_KEY = "introSeen";
@@ -12,12 +14,14 @@ function shouldPlayIntro(){
   } catch {
     // Storage can be blocked; fall through and play the intro
   }
-  return !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  return !prefersReducedMotion();
 }
 
 function App() {
   const [showIntro, setShowIntro] = useState(shouldPlayIntro);
   const [showSite, setShowSite] = useState(!showIntro);
+
+  useEffect(() => initSmoothScroll(), []);
 
   const handleReveal = useCallback(() => setShowSite(true), []);
   const handleIntroComplete = useCallback(() => {
@@ -37,7 +41,8 @@ function App() {
           <Navbar />
           <main id="top">
             <Home introActive={showIntro} />
-            <section id="about">
+            {/* Sits above the pinned hero, so it rises over the name as the page scrolls */}
+            <section id="about" className="relative z-10 bg-white">
               <About />
             </section>
             <section id="work" className="scroll-mt-20">

@@ -1,5 +1,17 @@
 @import "tailwindcss";
+/* Lenis drives scrolling, so the native smooth scroll would fight it; these are its required base styles */
+@import "lenis/dist/lenis.css";
 
-html {
-  scroll-behavior: smooth;
+@theme {
+  /* A short segment travelling down the hero's scroll cue */
+  --animate-scroll-cue: scroll-cue 2.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+
+  @keyframes scroll-cue {
+    from {
+      transform: translateY(-100%);
+    }
+    to {
+      transform: translateY(100%);
+    }
+  }
 }
