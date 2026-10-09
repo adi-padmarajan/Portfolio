@@ -12,9 +12,9 @@ import { MOTION_OK } from "../lib/motion";
 gsap.registerPlugin(ScrollTrigger, ScrambleTextPlugin);
 
 // The subtitle cycles through these, starting with the first
-const ROLES = ["Software Developer", "Marathon Runner"];
+const ROLES = ["Software Developer", "I build things", "I drink a lot of coffee"];
 
-// Scale the wordmark about the D's counter, so the counter stays put while everything else rushes outward
+// Scale the wordmark about the d's counter, so the counter stays put while everything else rushes outward
 const ZOOM_ORIGIN = `${(D_COUNTER.x / WORDMARK_WIDTH) * 100}% ${(D_COUNTER.y / WORDMARK_HEIGHT) * 100}%`;
 
 type HeroTitleProps = {
@@ -75,7 +75,7 @@ function HeroTitle({ introActive }: HeroTitleProps){
         return () => mm.revert();
     }, [followsIntro]);
 
-    // Scrolling: the hero holds still while the camera dives into the D. The counter grows until it swallows
+    // Scrolling: the hero holds still while the camera dives into the d. The counter grows until it swallows
     // the screen, and its white opens straight onto About.
     useLayoutEffect(() => {
         const mm = gsap.matchMedia();
@@ -135,13 +135,14 @@ function HeroTitle({ introActive }: HeroTitleProps){
         return () => mm.revert();
     }, []);
 
-    // "I am" sits on the wordmark's left edge and the role on its right, like a title card's credits.
+    // A short, centred stack ("I am", the wordmark, the role) with generous space around it, so it reads in one glance.
+    // The wordmark is capped by width and height alike, so it never crowds the screen.
     // Screen readers hear "I am Adi", then every role at once instead of the changing text.
     return (
     <section ref={sectionRef} className="relative flex min-h-svh flex-col items-center justify-center overflow-hidden bg-white px-6 md:px-10 lg:px-12">
-        <div className="w-full max-w-[calc(52svh*1.9)]">
+        <div className="flex flex-col items-center text-center">
             <h1>
-                <span ref={leadRef} className="block overflow-hidden text-sm font-medium tracking-[0.3em] text-gray-400 uppercase sm:text-base">
+                <span ref={leadRef} className="block overflow-hidden text-2xl font-medium tracking-tight text-gray-500 sm:text-3xl lg:text-4xl">
                     <span className="block">I am</span>
                 </span>
                 <span className="sr-only">Adi</span>
@@ -149,12 +150,12 @@ function HeroTitle({ introActive }: HeroTitleProps){
                     ref={markRef}
                     aria-hidden="true"
                     style={{ transformOrigin: ZOOM_ORIGIN }}
-                    className="mt-3 block text-black sm:mt-5"
+                    className="mx-auto mt-6 block w-[min(68vw,calc(27svh*1.9),36rem)] text-black sm:mt-8 lg:mt-10"
                 >
                     <Wordmark letterRef={lettersRef} />
                 </span>
             </h1>
-            <p ref={subtitleRef} className="mt-3 flex justify-end overflow-hidden text-lg font-medium tracking-wide text-gray-500 sm:mt-5 sm:text-2xl lg:text-3xl">
+            <p ref={subtitleRef} className="mt-6 overflow-hidden text-2xl font-medium tracking-tight text-gray-500 sm:mt-8 sm:text-3xl lg:mt-10 lg:text-4xl">
                 <span className="block whitespace-nowrap">
                     <span className="sr-only">{ROLES.join(" and ")}</span>
                     <span ref={roleRef} aria-hidden="true">{ROLES[0]}</span>
