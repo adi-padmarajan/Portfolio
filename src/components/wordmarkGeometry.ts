@@ -2,6 +2,6 @@
 export const WORDMARK_WIDTH = 190;
 export const WORDMARK_HEIGHT = 100;
 
-// The A's triangular counter, as its incircle: zooming about this centre until the circle outgrows the screen
-// guarantees the hole swallows the whole viewport
-export const A_COUNTER = { x: 42, y: 55.667, r: 8.333 };
+// The D's counter, as the largest circle that fits inside it (it touches the stem and the bowl's inner curve):
+// zooming about this centre until the circle outgrows the screen guarantees the hole swallows the whole viewport
+export const D_COUNTER = { x: 125, y: 50, r: 15 };

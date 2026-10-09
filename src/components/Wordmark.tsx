@@ -1,7 +1,7 @@
 import type { Ref } from "react";
 import { WORDMARK_HEIGHT, WORDMARK_WIDTH } from "./wordmarkGeometry";
 
-// "ADI" drawn as a heavy geometric wordmark. Drawing it (rather than setting it in a font) pins the A's counter
+// "ADI" drawn as a heavy geometric wordmark. Drawing it (rather than setting it in a font) pins the D's counter
 // to exact coordinates, so the hero can zoom precisely into it, and keeps every edge crisp at any scale.
 function Wordmark({ letterRef }: { letterRef?: Ref<SVGGElement> }){
     return(
