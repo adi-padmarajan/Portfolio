@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 
 const VARIANTS = {
-    dark: "bg-black text-white",
-    light: "bg-white text-black",
+    dark: "bg-black text-white focus-visible:outline-black",
+    light: "bg-white text-black focus-visible:outline-white",
 };
 
 const SIZES = {
