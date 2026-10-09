@@ -6,7 +6,7 @@ import HeroDetail from "./HeroDetail";
 import LocalTime from "./LocalTime";
 import ScrollCue from "./ScrollCue";
 import Wordmark from "./Wordmark";
-import { A_COUNTER, WORDMARK_HEIGHT, WORDMARK_WIDTH } from "./wordmarkGeometry";
+import { D_COUNTER, WORDMARK_HEIGHT, WORDMARK_WIDTH } from "./wordmarkGeometry";
 import { MOTION_OK } from "../lib/motion";
 
 gsap.registerPlugin(ScrollTrigger, ScrambleTextPlugin);
@@ -14,8 +14,8 @@ gsap.registerPlugin(ScrollTrigger, ScrambleTextPlugin);
 // The subtitle cycles through these, starting with the first
 const ROLES = ["Software Developer", "Marathon Runner"];
 
-// Scale the wordmark about the A's counter, so the counter stays put while everything else rushes outward
-const ZOOM_ORIGIN = `${(A_COUNTER.x / WORDMARK_WIDTH) * 100}% ${(A_COUNTER.y / WORDMARK_HEIGHT) * 100}%`;
+// Scale the wordmark about the D's counter, so the counter stays put while everything else rushes outward
+const ZOOM_ORIGIN = `${(D_COUNTER.x / WORDMARK_WIDTH) * 100}% ${(D_COUNTER.y / WORDMARK_HEIGHT) * 100}%`;
 
 type HeroTitleProps = {
     // True while the intro overlay is still on screen
@@ -75,7 +75,7 @@ function HeroTitle({ introActive }: HeroTitleProps){
         return () => mm.revert();
     }, [followsIntro]);
 
-    // Scrolling: the hero holds still while the camera dives into the A. The counter grows until it swallows
+    // Scrolling: the hero holds still while the camera dives into the D. The counter grows until it swallows
     // the screen, and its white opens straight onto About.
     useLayoutEffect(() => {
         const mm = gsap.matchMedia();
@@ -92,15 +92,15 @@ function HeroTitle({ introActive }: HeroTitleProps){
                 const rect = mark.getBoundingClientRect();
                 const top = section.getBoundingClientRect().top;
                 // The counter is the transform origin, so its position on screen is the same at any scale
-                const x = rect.left + (A_COUNTER.x / WORDMARK_WIDTH) * rect.width;
-                const y = rect.top - top + (A_COUNTER.y / WORDMARK_HEIGHT) * rect.height;
+                const x = rect.left + (D_COUNTER.x / WORDMARK_WIDTH) * rect.width;
+                const y = rect.top - top + (D_COUNTER.y / WORDMARK_HEIGHT) * rect.height;
                 const reach = Math.max(
                     Math.hypot(x, y),
                     Math.hypot(window.innerWidth - x, y),
                     Math.hypot(x, window.innerHeight - y),
                     Math.hypot(window.innerWidth - x, window.innerHeight - y),
                 );
-                const radius = (A_COUNTER.r / WORDMARK_HEIGHT) * (rect.height / scale);
+                const radius = (D_COUNTER.r / WORDMARK_HEIGHT) * (rect.height / scale);
                 maxScale = (reach / radius) * 1.05;
             };
             // Scale exponentially: equal scroll distances feel like equal distances travelled, like a camera dolly
@@ -125,7 +125,8 @@ function HeroTitle({ introActive }: HeroTitleProps){
               .to(leadRef.current, { yPercent: -60, autoAlpha: 0, duration: 0.15 }, 0)
               .to(subtitleRef.current, { yPercent: 60, autoAlpha: 0, duration: 0.15 }, 0)
               .to(detailsRef.current, { autoAlpha: 0, duration: 0.1 }, 0)
-              .to(zoom, { progress: 1, duration: 1, ease: "power1.in", onUpdate: applyZoom }, 0)
+              // Finish a little early, so the screen is fully white for a beat before the navbar returns
+              .to(zoom, { progress: 1, duration: 0.85, ease: "power1.in", onUpdate: applyZoom }, 0)
               // The navbar's frosted white would turn grey over the letters, so it steps aside for the shot
               // and returns once the counter has turned the screen white
               .to(header, { yPercent: -100, duration: 0.08 }, 0)
@@ -174,7 +175,7 @@ function HeroTitle({ introActive }: HeroTitleProps){
             </div>
             <div className="hidden justify-self-end text-right sm:block">
                 <HeroDetail label="Currently">
-                    Software Developer at STEMCELL
+                    Software Developer at STEMCELL Technologies
                 </HeroDetail>
             </div>
         </div>
