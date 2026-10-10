@@ -14,3 +14,6 @@ export { default as LocalTime } from "./LocalTime";
 export { NAV_LINKS } from "./navLinks";
 export { default as HeroDetail } from "./HeroDetail";
 export { default as ScrollCue } from "./ScrollCue";
+export { EXPERIENCES } from "./experiences";
+export type { Experience } from "./experiences";
+export { default as ExperienceDialog } from "./ExperienceDialog";

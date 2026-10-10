@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Navbar } from "./components";
 import { prefersReducedMotion } from "./lib/motion";
 import { initSmoothScroll } from "./lib/smoothScroll";
-import { About, Contact, Home, Languages, Projects } from "./pages/";
+import { About, Contact, Experience, Home, Languages, Projects } from "./pages/";
 
 const INTRO_SEEN_KEY = "introSeen";
 
@@ -43,6 +43,9 @@ function App() {
             <Home introActive={showIntro} />
             <section id="about">
               <About />
+            </section>
+            <section id="experience" className="scroll-mt-20">
+              <Experience />
             </section>
             <section id="work" className="scroll-mt-20">
               <Projects />
