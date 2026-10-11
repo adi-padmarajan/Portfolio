@@ -18,4 +18,5 @@ export { default as ProjectCard } from "./ProjectCard";
 export { default as Wordmark } from "./Wordmark";
 export { default as GreetingRoll } from "./GreetingRoll";
 export { default as AwakeStatus } from "./AwakeStatus";
+export { default as CoffeeCup } from "./CoffeeCup";
 export { default as ContactRow } from "./ContactRow";

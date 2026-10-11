@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import CoffeeCup from "./CoffeeCup";
 import HeroDetail from "./HeroDetail";
 import LocalTime from "./LocalTime";
 import ScrollCue from "./ScrollCue";
@@ -16,7 +17,7 @@ type HeroTitleProps = {
     introActive: boolean;
 };
 
-// The intro has already said my name, so the hero opens the story with what drives it
+// The intro has already said my name, so the hero opens the story with what drives it (and what fuels it)
 function HeroTitle({ introActive }: HeroTitleProps){
     const sectionRef = useRef<HTMLElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
@@ -25,8 +26,12 @@ function HeroTitle({ introActive }: HeroTitleProps){
     const lineRef = useRef<HTMLSpanElement>(null);
     const taglineRef = useRef<HTMLParagraphElement>(null);
     const detailsRef = useRef<HTMLDivElement>(null);
+    const cupRef = useRef<HTMLDivElement>(null);
     // The site mounts as the intro overlay starts sliding away, so this is read once, on mount
     const [followsIntro] = useState(introActive);
+
+    // The cup sets down while the headline rises, and its coffee pours once the line has drawn out
+    const entranceDelay = followsIntro ? 0.45 : 0.15;
 
     // Entrance: the roles tick in one by one, the headline rises line by line out of its masks, and the
     // line with no finish draws out towards the edge of the screen. Each mask is left free for the scroll animation.
@@ -34,11 +39,12 @@ function HeroTitle({ introActive }: HeroTitleProps){
         const mm = gsap.matchMedia();
         mm.add(MOTION_OK, () => {
             // After the intro, start while the overlay is still lifting, so the words rise into the space it uncovers
-            gsap.timeline({ delay: followsIntro ? 0.45 : 0.15, defaults: { ease: "power4.out" } })
+            gsap.timeline({ delay: entranceDelay, defaults: { ease: "power4.out" } })
               .from(rolesRef.current?.children ?? [], { y: 16, autoAlpha: 0, duration: 0.8, stagger: 0.12, ease: "power3.out" })
               .from(headlineRef.current?.querySelectorAll("[data-line]") ?? [], { yPercent: 110, duration: 1.2, stagger: 0.12 }, "-=0.5")
               .from(lineRef.current, { scaleX: 0, duration: 1.4, ease: "power3.inOut" }, "-=0.6")
               .from(taglineRef.current, { y: 20, autoAlpha: 0, duration: 1, ease: "power3.out" }, "-=1.1")
+              .from(cupRef.current, { scale: 0.92, autoAlpha: 0, duration: 1.4, ease: "power3.out" }, 0.5)
               .from(detailsRef.current?.children ?? [], {
                 y: 12,
                 autoAlpha: 0,
@@ -48,9 +54,10 @@ function HeroTitle({ introActive }: HeroTitleProps){
             }, "-=0.6");
         });
         return () => mm.revert();
-    }, [followsIntro]);
+    }, [entranceDelay]);
 
-    // Scrolling: the words drift up and fade a little faster than the page, so the hero gives way to About
+    // Scrolling: the words drift up and fade a little faster than the page, so the hero gives way to About,
+    // while the cup lags behind them and turns on its saucer
     useLayoutEffect(() => {
         const mm = gsap.matchMedia();
         mm.add(MOTION_OK, () => {
@@ -64,7 +71,8 @@ function HeroTitle({ introActive }: HeroTitleProps){
                 },
             })
               .to(contentRef.current, { yPercent: -25, autoAlpha: 0 }, 0)
-              .to(detailsRef.current, { autoAlpha: 0, duration: 0.4 }, 0);
+              .to(detailsRef.current, { autoAlpha: 0, duration: 0.4 }, 0)
+              .to(cupRef.current, { yPercent: -10, rotate: 20, autoAlpha: 0 }, 0);
         });
         return () => mm.revert();
     }, []);
@@ -99,6 +107,15 @@ function HeroTitle({ introActive }: HeroTitleProps){
             <p ref={taglineRef} className="mt-8 text-xl font-medium tracking-tight text-gray-500 sm:mt-10 sm:text-2xl lg:text-3xl">
                 Building ideas. Chasing challenges. <span className="sm:block">Always moving forward.</span>
             </p>
+        </div>
+
+        {/* Under the words on smaller screens; on large ones it fills the right half, sitting above the headline's
+            line so the line passes behind the saucer and carries on out the other side */}
+        <div
+            ref={cupRef}
+            className="mt-10 w-44 self-end sm:w-56 lg:absolute lg:top-1/2 lg:right-12 lg:mt-0 lg:w-[min(30vw,28rem,58svh)] lg:-translate-y-[55%]"
+        >
+            <CoffeeCup delay={entranceDelay + 2} />
         </div>
 
         {/* Details framing the bottom edge, like the credits on a film still */}
