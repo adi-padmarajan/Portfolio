@@ -10,8 +10,8 @@ gsap.registerPlugin(ScrollTrigger);
 const C = 50;
 const COFFEE_R = 27;
 
-// How far down the page you are, as a cup of coffee you finish as you read. It turns up once you've left the hero
-// (which has its own cup), empties as you scroll towards the end and fills again on the way back up. It's also the
+// How far down the page you are, as a cup of coffee you finish as you read. It turns up once you're past About
+// (the hero and About each have their own cup), empties as you scroll towards the end and fills again on the way back up. It's also the
 // way home: pressing it glides back to the top.
 // It never sits in the way: where there's no clear margin beside the content it steps aside while you read on and
 // comes back as soon as you scroll up, and it bows out at the footer, which has its own way back to the top.
@@ -39,14 +39,14 @@ function CoffeeProgress(){
             else gsap.to(button, { ...vars, duration: visible ? 0.6 : 0.35, ease: visible ? "back.out(1.7)" : "power2.in", overwrite: true });
         };
 
-        // The level follows the scroll exactly (no easing to lag behind), from a full cup as About arrives to an
+        // The level follows the scroll exactly (no easing to lag behind), from a full cup as Experience arrives to an
         // empty one at the bottom of the page
         const sync = (self: ScrollTrigger) => {
             level.setAttribute("r", String(COFFEE_R * (1 - self.progress)));
             show(self.scroll() >= self.start && !atFooter && (wide.matches || !readingOn));
         };
         const trigger = ScrollTrigger.create({
-            trigger: "#about",
+            trigger: "#experience",
             start: "top 70%",
             endTrigger: document.documentElement,
             end: "bottom bottom",

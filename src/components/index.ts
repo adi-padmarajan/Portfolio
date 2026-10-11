@@ -19,6 +19,5 @@ export { default as GreetingRoll } from "./GreetingRoll";
 export { default as AwakeStatus } from "./AwakeStatus";
 export { default as CoffeeCup } from "./CoffeeCup";
 export { default as ContactRow } from "./ContactRow";
-export { default as CafeMenu } from "./CafeMenu";
-export { default as CoffeeRing } from "./CoffeeRing";
+export { default as AboutFacts } from "./AboutFacts";
 export { default as CoffeeProgress } from "./CoffeeProgress";
