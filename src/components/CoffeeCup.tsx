@@ -94,7 +94,7 @@ function CoffeeCup({ delay = 0 }: CoffeeCupProps){
 
             // Each wisp rises, sways and fades in its own rhythm
             const loops: gsap.core.Animation[] = wisps.map((wisp, i) =>
-                gsap.timeline({ repeat: -1, delay: i * 1.3 })
+                gsap.timeline({ paused: true, repeat: -1, delay: i * 1.3 })
                   .fromTo(wisp, { y: 24, scaleY: 0.8, opacity: 0 }, { y: -34, scaleY: 1.15, duration: 4.2, ease: "none" })
                   .to(wisp, { x: i % 2 ? 10 : -10, duration: 2.1, ease: "sine.inOut", yoyo: true, repeat: 1 }, 0)
                   .to(wisp, { opacity: 1, duration: 1.4, ease: "sine.out" }, 0)
@@ -103,12 +103,12 @@ function CoffeeCup({ delay = 0 }: CoffeeCupProps){
 
             // Now and then the surface stirs on its own, so the cup feels alive even when nobody touches it
             loops.push(
-                gsap.timeline({ repeat: -1, delay: delay + 8 })
+                gsap.timeline({ paused: true, repeat: -1, delay: delay + 8 })
                   .add(() => ripple(0.22, 2))
                   .to({}, { duration: 6 }),
             );
 
-            // Only keep the loops running while the cup is on screen
+            // The loops start paused and only run while the cup is on screen, even if the page loads scrolled past it
             const visibility = ScrollTrigger.create({
                 trigger: button,
                 start: "top bottom",
