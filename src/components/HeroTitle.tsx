@@ -1,165 +1,103 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { ScrambleTextPlugin } from "gsap/ScrambleTextPlugin";
 import HeroDetail from "./HeroDetail";
 import LocalTime from "./LocalTime";
 import ScrollCue from "./ScrollCue";
-import Wordmark from "./Wordmark";
-import { D_COUNTER, WORDMARK_HEIGHT, WORDMARK_WIDTH } from "./wordmarkGeometry";
 import { MOTION_OK } from "../lib/motion";
 
-gsap.registerPlugin(ScrollTrigger, ScrambleTextPlugin);
+gsap.registerPlugin(ScrollTrigger);
 
-// The subtitle cycles through these, starting with the first
-const ROLES = ["Software Engineer", "I build things", "I drink a lot of coffee"];
-
-// Scale the wordmark about the d's counter, so the counter stays put while everything else rushes outward
-const ZOOM_ORIGIN = `${(D_COUNTER.x / WORDMARK_WIDTH) * 100}% ${(D_COUNTER.y / WORDMARK_HEIGHT) * 100}%`;
+// Who I am, in three words
+const ROLES = ["Software Engineer.", "Marathoner.", "Builder."];
 
 type HeroTitleProps = {
     // True while the intro overlay is still on screen
     introActive: boolean;
 };
 
+// The intro has already said my name, so the hero opens the story with what drives it
 function HeroTitle({ introActive }: HeroTitleProps){
     const sectionRef = useRef<HTMLElement>(null);
-    const leadRef = useRef<HTMLSpanElement>(null);
-    const markRef = useRef<HTMLSpanElement>(null);
-    const lettersRef = useRef<SVGGElement>(null);
-    const subtitleRef = useRef<HTMLParagraphElement>(null);
-    const roleRef = useRef<HTMLSpanElement>(null);
+    const contentRef = useRef<HTMLDivElement>(null);
+    const rolesRef = useRef<HTMLParagraphElement>(null);
+    const headlineRef = useRef<HTMLHeadingElement>(null);
+    const lineRef = useRef<HTMLSpanElement>(null);
+    const taglineRef = useRef<HTMLParagraphElement>(null);
     const detailsRef = useRef<HTMLDivElement>(null);
     // The site mounts as the intro overlay starts sliding away, so this is read once, on mount
     const [followsIntro] = useState(introActive);
 
-    // Entrance: the letters rise out of the wordmark's edge one after another, then the lines around them
-    // slide out of their own masks. Each mask (the outer element) is left free for the scroll animation below.
+    // Entrance: the roles tick in one by one, the headline rises line by line out of its masks, and the
+    // line with no finish draws out towards the edge of the screen. Each mask is left free for the scroll animation.
     useLayoutEffect(() => {
         const mm = gsap.matchMedia();
         mm.add(MOTION_OK, () => {
-            // Swap roles with a brief scramble, holding each one long enough to read
-            const cycle = gsap.timeline({ paused: true, repeat: -1 });
-            ROLES.forEach((_, i) => {
-                cycle.to(roleRef.current, {
-                    duration: 1,
-                    ease: "none",
-                    scrambleText: {
-                        text: ROLES[(i + 1) % ROLES.length],
-                        chars: "lowerCase",
-                        speed: 0.6,
-                    },
-                }, "+=2.8");
-            });
-
-            // After the intro, start while the overlay is still lifting, so the name rises into the space it uncovers
+            // After the intro, start while the overlay is still lifting, so the words rise into the space it uncovers
             gsap.timeline({ delay: followsIntro ? 0.45 : 0.15, defaults: { ease: "power4.out" } })
-              .from(lettersRef.current?.children ?? [], {
-                y: WORDMARK_HEIGHT * 1.1,
-                duration: 1.3,
-                stagger: 0.09,
-            })
-              .from([leadRef.current?.firstElementChild, subtitleRef.current?.firstElementChild], {
-                yPercent: 110,
-                duration: 1,
-            }, "-=0.9")
+              .from(rolesRef.current?.children ?? [], { y: 16, autoAlpha: 0, duration: 0.8, stagger: 0.12, ease: "power3.out" })
+              .from(headlineRef.current?.querySelectorAll("[data-line]") ?? [], { yPercent: 110, duration: 1.2, stagger: 0.12 }, "-=0.5")
+              .from(lineRef.current, { scaleX: 0, duration: 1.4, ease: "power3.inOut" }, "-=0.6")
+              .from(taglineRef.current, { y: 20, autoAlpha: 0, duration: 1, ease: "power3.out" }, "-=1.1")
               .from(detailsRef.current?.children ?? [], {
                 y: 12,
                 autoAlpha: 0,
                 duration: 0.8,
                 stagger: 0.1,
                 ease: "power3.out",
-            }, "-=0.6")
-              .add(() => { cycle.play(); });
+            }, "-=0.6");
         });
         return () => mm.revert();
     }, [followsIntro]);
 
-    // Scrolling: the hero holds still while the camera dives into the d. The counter grows until it swallows
-    // the screen, and its white opens straight onto About.
+    // Scrolling: the words drift up and fade a little faster than the page, so the hero gives way to About
     useLayoutEffect(() => {
         const mm = gsap.matchMedia();
         mm.add(MOTION_OK, () => {
-            const mark = markRef.current!;
-            const section = sectionRef.current!;
-            const header = document.querySelector("[data-site-header]");
-            const zoom = { progress: 0 };
-            let maxScale = 1;
-
-            // How far to scale before the counter's incircle covers every corner of the screen
-            const measure = () => {
-                const scale = gsap.getProperty(mark, "scale") as number;
-                const rect = mark.getBoundingClientRect();
-                const top = section.getBoundingClientRect().top;
-                // The counter is the transform origin, so its position on screen is the same at any scale
-                const x = rect.left + (D_COUNTER.x / WORDMARK_WIDTH) * rect.width;
-                const y = rect.top - top + (D_COUNTER.y / WORDMARK_HEIGHT) * rect.height;
-                const reach = Math.max(
-                    Math.hypot(x, y),
-                    Math.hypot(window.innerWidth - x, y),
-                    Math.hypot(x, window.innerHeight - y),
-                    Math.hypot(window.innerWidth - x, window.innerHeight - y),
-                );
-                const radius = (D_COUNTER.r / WORDMARK_HEIGHT) * (rect.height / scale);
-                maxScale = (reach / radius) * 1.05;
-            };
-            // Scale exponentially: equal scroll distances feel like equal distances travelled, like a camera dolly
-            const applyZoom = () => gsap.set(mark, { scale: maxScale ** zoom.progress });
-
-            measure();
             gsap.timeline({
                 defaults: { ease: "none" },
                 scrollTrigger: {
-                    trigger: section,
+                    trigger: sectionRef.current,
                     start: "top top",
-                    end: "+=120%",
-                    pin: true,
+                    end: "bottom top",
                     scrub: true,
-                    onRefresh: () => {
-                        measure();
-                        applyZoom();
-                    },
                 },
             })
-              // The words around the name part to let it through
-              .to(leadRef.current, { yPercent: -60, autoAlpha: 0, duration: 0.15 }, 0)
-              .to(subtitleRef.current, { yPercent: 60, autoAlpha: 0, duration: 0.15 }, 0)
-              .to(detailsRef.current, { autoAlpha: 0, duration: 0.1 }, 0)
-              // Finish a little early, so the screen is fully white for a beat before the navbar returns
-              .to(zoom, { progress: 1, duration: 0.85, ease: "power1.in", onUpdate: applyZoom }, 0)
-              // The navbar's frosted white would turn grey over the letters, so it steps aside for the shot
-              // and returns once the counter has turned the screen white
-              .to(header, { yPercent: -100, duration: 0.08 }, 0)
-              .to(header, { yPercent: 0, duration: 0.08 }, 0.92);
+              .to(contentRef.current, { yPercent: -25, autoAlpha: 0 }, 0)
+              .to(detailsRef.current, { autoAlpha: 0, duration: 0.4 }, 0);
         });
         return () => mm.revert();
     }, []);
 
-    // A short, centred stack ("I am", the wordmark, the role) with generous space around it, so it reads in one glance.
-    // The wordmark is capped by width and height alike, so it never crowds the screen.
-    // Screen readers hear "I am Adi", then every role at once instead of the changing text.
+    // Left-aligned like the opening page of a book. The line after the headline runs off the right edge
+    // (it borrows the section's padding), with a short segment forever travelling along it.
     return (
-    <section ref={sectionRef} className="relative flex min-h-svh flex-col items-center justify-center overflow-hidden bg-white px-6 md:px-10 lg:px-12">
-        <div className="flex flex-col items-center text-center">
-            <h1>
-                <span ref={leadRef} className="block overflow-hidden text-2xl font-medium tracking-tight text-gray-500 sm:text-3xl lg:text-4xl">
-                    <span className="block">I am</span>
+    <section ref={sectionRef} className="relative flex min-h-svh flex-col justify-center overflow-hidden bg-white px-6 pt-24 pb-40 md:px-10 lg:px-12">
+        <div ref={contentRef}>
+            <p ref={rolesRef} className="flex flex-wrap gap-x-2.5 text-[0.625rem] font-medium tracking-widest text-gray-400 uppercase sm:gap-x-4 sm:text-sm">
+                {ROLES.map((role) => <span key={role}>{role}</span>)}
+            </p>
+
+            <h1 ref={headlineRef} className="mt-6 text-[clamp(2.5rem,8.5vw,7.5rem)] leading-[0.95] font-extrabold tracking-tighter text-black sm:mt-8">
+                <span className="block overflow-hidden pb-[0.08em]">
+                    <span data-line className="block">Curiosity without</span>
                 </span>
-                <span className="sr-only">Adi</span>
-                <span
-                    ref={markRef}
-                    aria-hidden="true"
-                    style={{ transformOrigin: ZOOM_ORIGIN }}
-                    className="mx-auto mt-6 block w-[min(68vw,calc(27svh*1.9),36rem)] text-black sm:mt-8 lg:mt-10"
-                >
-                    <Wordmark letterRef={lettersRef} />
+                <span className="-mr-6 flex items-center gap-4 md:-mr-10 lg:-mr-12 sm:gap-6">
+                    <span className="overflow-hidden pb-[0.08em] whitespace-nowrap">
+                        <span data-line className="block">a finish line.</span>
+                    </span>
+                    <span
+                        ref={lineRef}
+                        aria-hidden="true"
+                        className="relative block h-px min-w-8 flex-1 origin-left overflow-hidden bg-black/15"
+                    >
+                        <span className="absolute inset-y-0 left-0 block w-1/4 bg-black motion-safe:animate-finish-line" />
+                    </span>
                 </span>
             </h1>
-            <p ref={subtitleRef} className="mt-6 overflow-hidden text-2xl font-medium tracking-tight text-gray-500 sm:mt-8 sm:text-3xl lg:mt-10 lg:text-4xl">
-                <span className="block whitespace-nowrap">
-                    <span className="sr-only">{ROLES.join(" and ")}</span>
-                    <span ref={roleRef} aria-hidden="true">{ROLES[0]}</span>
-                </span>
+
+            <p ref={taglineRef} className="mt-8 text-xl font-medium tracking-tight text-gray-500 sm:mt-10 sm:text-2xl lg:text-3xl">
+                Building ideas. Chasing challenges. <span className="sm:block">Always moving forward.</span>
             </p>
         </div>
 
