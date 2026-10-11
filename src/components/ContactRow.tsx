@@ -2,7 +2,12 @@ import { useEffect, useState } from "react";
 
 const RESET_DELAY_MS = 2000;
 
-// Copies a value for visitors without a mail client set up, then confirms briefly
+/**
+ * Renders a button that copies `value` to the clipboard, with `label` identifying
+ * the value for screen readers. Shows confirmation for two seconds after entering
+ * the copied state; further successful clicks during that time do not extend it.
+ * Clipboard failures leave the current state unchanged.
+ */
 function CopyButton({ value, label }: { value: string; label: string }){
     const [copied, setCopied] = useState(false);
 
@@ -12,6 +17,7 @@ function CopyButton({ value, label }: { value: string; label: string }){
         return () => clearTimeout(timeout);
     }, [copied]);
 
+    /** Copies the value and enables confirmation on success; clipboard errors are caught. */
     const handleCopy = async () => {
         try {
             await navigator.clipboard.writeText(value);
@@ -33,8 +39,12 @@ function CopyButton({ value, label }: { value: string; label: string }){
     );
 }
 
-// One way to reach me, as a full-width ruled row. On hover or focus, white wipes up from the rule and the text
-// inverts, so the whole row reads as one target. The value's link stretches over the row; Copy sits above it.
+/**
+ * Renders a ruled contact row whose colors invert on hover or focus. The value's
+ * link stretches over the row; an optional Copy button sits above it.
+ * When `copy` is true, the button copies the displayed `value`, not `href`.
+ * Links whose `href` starts with "http" open in a new tab.
+ */
 function ContactRow({
     label,
     value,

@@ -7,9 +7,13 @@ const hourFormatter = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Vancouver",
 });
 
+/** Returns the current hour in America/Vancouver, from 0 through 23. */
 const vancouverHour = () => Number(hourFormatter.format(new Date()));
 
-// My local time with an honest guess at whether I'm up, so a late-night message doesn't wait on a reply in silence
+/**
+ * Displays Vancouver local time and an estimated awake status from 08:00 inclusive
+ * to 23:00 exclusive. Checks the status every 60 seconds while mounted.
+ */
 function AwakeStatus(){
     const [hour, setHour] = useState(vancouverHour);
 

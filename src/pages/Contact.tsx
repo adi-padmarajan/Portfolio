@@ -19,6 +19,11 @@ gsap.registerPlugin(ScrollTrigger);
 // Every section but this one, for the footer's short index
 const SECTION_LINKS = NAV_LINKS.filter((link) => link.href !== "#contact");
 
+/**
+ * Renders contact methods, Vancouver availability, and footer navigation with a
+ * closing wordmark. Runs scroll animations when reduced motion is not requested
+ * and reverts them on unmount or a change to that preference.
+ */
 function Contact(){
     const rootRef = useRef<HTMLDivElement>(null);
     const lettersRef = useRef<SVGGElement>(null);
