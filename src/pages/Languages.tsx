@@ -1,8 +1,7 @@
 import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
+import CircleButton from "../components/CircleButton";
 import { GREETINGS as greetings, GREETING_TEXT } from "../components/greetingText";
-import Wordmark from "../components/Wordmark";
-import { WORDMARK_HEIGHT } from "../components/wordmarkGeometry";
 import { lockScroll, unlockScroll } from "../lib/smoothScroll";
 
 type LanguagesProps = {
@@ -12,15 +11,18 @@ type LanguagesProps = {
     onComplete: () => void;
 };
 
-// The opening scene: "hello" in the languages around me, then an introduction ("I am Adi"), and the visitor
-// chooses when to step into the story. The overlay only lifts once they press Continue.
+// The words that finish the greeting's sentence, each sliding up out of its own mask
+const REST = [",", "I’m", "Adi."];
+
+// The opening scene: "hello" in the languages around me, then the greeting finishes its thought ("Hello, I'm Adi.")
+// and the visitor chooses when to begin. The overlay only lifts once they press Begin.
 function Languages({ onReveal, onComplete }: LanguagesProps){
     const overlayRef = useRef<HTMLDivElement>(null);
     const wordRefs = useRef<HTMLSpanElement[]>([]);
     const introRef = useRef<HTMLDivElement>(null);
-    const leadRef = useRef<HTMLSpanElement>(null);
-    const lettersRef = useRef<SVGGElement>(null);
-    const continueRef = useRef<HTMLButtonElement>(null);
+    const helloRef = useRef<HTMLSpanElement>(null);
+    const restRefs = useRef<HTMLSpanElement[]>([]);
+    const beginRef = useRef<HTMLDivElement>(null);
     // Set once the introduction has landed; lifts the overlay
     const exitRef = useRef<(() => void) | null>(null);
 
@@ -29,10 +31,11 @@ function Languages({ onReveal, onComplete }: LanguagesProps){
 
         const ctx = gsap.context(() => {
             const words = wordRefs.current;
-            const hello = words[words.length - 1];
+            const greetingHello = words[words.length - 1];
             const tl = gsap.timeline();
 
             gsap.set(words, { autoAlpha: 0 });
+            gsap.set(restRefs.current, { yPercent: 110 });
 
             // Fade the first greeting in, then swap through the rest
             tl.fromTo(words[0], { autoAlpha: 0, y: 20 }, { autoAlpha: 1, y: 0, duration: 0.5, ease: "power3.out" });
@@ -41,19 +44,22 @@ function Languages({ onReveal, onComplete }: LanguagesProps){
                   .set(words[i], { autoAlpha: 1 }, "<");
             }
 
-            // "Hello" lifts away as the introduction rises in beneath it, using the hero's entrance:
-            // the letters rise out of the wordmark's edge one after another, and "I am" slides out of its mask
-            tl.to(hello, { yPercent: -60, autoAlpha: 0, duration: 0.6, ease: "power3.in" }, "+=0.7")
-              .set(introRef.current, { autoAlpha: 1 })
-              .from(lettersRef.current?.children ?? [], {
-                y: WORDMARK_HEIGHT * 1.1,
-                duration: 1.3,
-                stagger: 0.09,
-                ease: "power4.out",
-            })
-              .from(leadRef.current?.firstElementChild ?? [], { yPercent: 110, duration: 1, ease: "power4.out" }, "-=1.1")
-              // Then the invitation to carry on; Enter works too, without a focus ring sitting on the button
-              .fromTo(continueRef.current, { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: 0.8, ease: "power3.out" }, "-=0.3")
+            // Swap the lone "Hello" for the sentence's, starting exactly where the greeting sat, then let it glide
+            // into place as the rest of the sentence rises in beside it
+            const fromGreeting = () => {
+                const from = greetingHello.getBoundingClientRect();
+                const to = helloRef.current!.getBoundingClientRect();
+                return { x: from.left - to.left, y: from.top - to.top, scale: from.height / to.height };
+            };
+            tl.add(() => {
+                gsap.set(helloRef.current, { ...fromGreeting(), transformOrigin: "0 0" });
+                gsap.set(greetingHello, { autoAlpha: 0 });
+                gsap.set(introRef.current, { autoAlpha: 1 });
+            }, "+=0.8")
+              .to(helloRef.current, { x: 0, y: 0, scale: 1, duration: 1.1, ease: "power4.inOut" })
+              .to(restRefs.current, { yPercent: 0, duration: 1, stagger: 0.12, ease: "power4.out" }, "-=0.55")
+              // Then the invitation to begin; Enter works too
+              .fromTo(beginRef.current, { autoAlpha: 0, scale: 0.6 }, { autoAlpha: 1, scale: 1, duration: 0.9, ease: "back.out(1.6)" }, "-=0.4")
               .add(() => { exitRef.current = exit; });
 
             function exit(){
@@ -100,28 +106,32 @@ function Languages({ onReveal, onComplete }: LanguagesProps){
                     ))}
                 </div>
 
-                {/* Sized like the hero, so the introduction reads as the same name the site opens on */}
                 <div ref={introRef} className="invisible flex flex-col items-center text-center [grid-area:1/1]">
-                    <p>
-                        <span className="sr-only">Hello, I am Adi</span>
-                        <span ref={leadRef} aria-hidden="true" className="block overflow-hidden text-2xl font-medium tracking-tight text-gray-500 sm:text-3xl lg:text-4xl">
-                            <span className="block">I am</span>
-                        </span>
-                        <span aria-hidden="true" className="mx-auto mt-6 block w-[min(68vw,calc(27svh*1.9),36rem)] text-black sm:mt-8 lg:mt-10">
-                            <Wordmark letterRef={lettersRef} />
+                    {/* On phones the sentence breaks after the comma, so it stays at the greetings' size.
+                        Each mask has a little room below, so descenders and the full stop aren't clipped. */}
+                    <p className={GREETING_TEXT}>
+                        <span className="sr-only">Hello, I’m Adi.</span>
+                        <span aria-hidden="true">
+                            <span ref={helloRef} className="inline-block">Hello</span>
+                            {REST.map((word, i) => (
+                                <span key={word}>
+                                    {i > 0 && " "}
+                                    {i === 1 && <br className="sm:hidden" />}
+                                    <span className="mb-[-0.15em] inline-block overflow-hidden pb-[0.15em] align-bottom">
+                                        <span
+                                            ref={(el) => { if (el) restRefs.current[i] = el; }}
+                                            className="block"
+                                        >
+                                            {word}
+                                        </span>
+                                    </span>
+                                </span>
+                            ))}
                         </span>
                     </p>
-                    <button
-                        ref={continueRef}
-                        type="button"
-                        onClick={() => exitRef.current?.()}
-                        className="group invisible mt-12 inline-flex items-center gap-3 rounded-full border border-black/15 px-7 py-3 text-xs font-medium tracking-widest text-black uppercase transition-colors duration-300 hover:border-black hover:bg-black hover:text-white sm:mt-16 sm:text-sm"
-                    >
-                        Continue
-                        <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">
-                            →
-                        </span>
-                    </button>
+                    <div ref={beginRef} className="invisible mt-14 sm:mt-20">
+                        <CircleButton onClick={() => exitRef.current?.()}>Begin</CircleButton>
+                    </div>
                 </div>
             </div>
         </div>
