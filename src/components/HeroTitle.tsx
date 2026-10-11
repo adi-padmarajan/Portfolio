@@ -12,7 +12,7 @@ import { MOTION_OK } from "../lib/motion";
 gsap.registerPlugin(ScrollTrigger, ScrambleTextPlugin);
 
 // The subtitle cycles through these, starting with the first
-const ROLES = ["Software Developer", "I build things", "I drink a lot of coffee"];
+const ROLES = ["Software Engineer", "I build things", "I drink a lot of coffee"];
 
 // Scale the wordmark about the d's counter, so the counter stays put while everything else rushes outward
 const ZOOM_ORIGIN = `${(D_COUNTER.x / WORDMARK_WIDTH) * 100}% ${(D_COUNTER.y / WORDMARK_HEIGHT) * 100}%`;

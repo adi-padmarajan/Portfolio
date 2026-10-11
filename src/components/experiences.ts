@@ -28,18 +28,18 @@ export const EXPERIENCES: Experience[] = [
     },
     {
         company: "The Salvation Army",
-        role: "Product Lead & Product Engineer",
+        role: "Product Engineer",
         period: "Oct 2026 — Present",
         location: "Vancouver, BC",
         summary:
-            "Leading CareRide, a transportation platform that gets vulnerable clients to essential services without needing a phone or payment.",
+            "Building CareRide, a transportation platform that gets vulnerable clients to essential services without needing a phone or payment.",
         highlights: [
-            "Leading **CareRide**, a nonprofit transportation platform built with The Salvation Army, connecting social service staff with volunteer drivers so vulnerable clients can reach essential services.",
+            "Building **CareRide**, a nonprofit transportation platform built with The Salvation Army, connecting social service staff with volunteer drivers so vulnerable clients can reach essential services.",
             "Architected the workflows for **ride booking, driver matching and staff dashboards**, supporting accessibility-based matching, real-time trip tracking and administrative approvals in **React and TypeScript**.",
             "Shipped a working **web and Android MVP in 48 hours** with a team of **3 engineers** at HACKVAN 2026, using **Cloudflare Workers and Capacitor** across **40+ pull requests**.",
             "Driving the production roadmap with Salvation Army stakeholders, prioritizing secure authentication, driver verification, booking notifications and recurring rides.",
         ],
-        stack: ["React", "TypeScript", "Cloudflare Workers", "Capacitor"],
+        stack: ["React", "TypeScript", "Cloudflare Workers", "Capacitor", "Supabase"],
     },
     {
         company: "RBC Borealis",
