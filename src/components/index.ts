@@ -1,7 +1,6 @@
 export { default as HeroTitle } from "./HeroTitle";
 export { default as Navbar } from "./Navbar";
 export { default as AboutTitle } from "./AboutTitle";
-export { default as Education } from "./Education";
 export { default as CircleButton } from "./CircleButton";
 export { EMAIL, SOCIAL_LINKS } from "./contactDetails";
 export { default as BackToTopLink } from "./BackToTopLink";
@@ -20,3 +19,6 @@ export { default as GreetingRoll } from "./GreetingRoll";
 export { default as AwakeStatus } from "./AwakeStatus";
 export { default as CoffeeCup } from "./CoffeeCup";
 export { default as ContactRow } from "./ContactRow";
+export { default as CafeMenu } from "./CafeMenu";
+export { default as CoffeeRing } from "./CoffeeRing";
+export { default as CoffeeProgress } from "./CoffeeProgress";

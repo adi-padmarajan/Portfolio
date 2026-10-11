@@ -1,21 +1,13 @@
 import { useEffect, useState } from "react";
 import LocalTime from "./LocalTime";
-
-const hourFormatter = new Intl.DateTimeFormat("en-US", {
-    hour: "numeric",
-    hourCycle: "h23",
-    timeZone: "America/Vancouver",
-});
-
-/** Returns the current hour in America/Vancouver, from 0 through 23. */
-const vancouverHour = () => Number(hourFormatter.format(new Date()));
+import { vancouverHour } from "../lib/vancouverTime";
 
 /**
  * Displays Vancouver local time and an estimated awake status from 08:00 inclusive
  * to 23:00 exclusive. Checks the status every 60 seconds while mounted.
  */
 function AwakeStatus(){
-    const [hour, setHour] = useState(vancouverHour);
+    const [hour, setHour] = useState(() => vancouverHour());
 
     useEffect(() => {
         const interval = setInterval(() => setHour(vancouverHour()), 60_000);

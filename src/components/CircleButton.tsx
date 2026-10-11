@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 const VARIANTS = {
     dark: "bg-black text-white focus-visible:outline-black",
     light: "bg-white text-black focus-visible:outline-white",
+    espresso: "bg-[#2a170c] text-[#faf6f0] focus-visible:outline-[#2a170c]",
 };
 
 const SIZES = {
@@ -16,10 +17,11 @@ type CircleButtonProps = {
     size?: keyof typeof SIZES;
 } & ({ href: string; onClick?: never } | { onClick: () => void; href?: never });
 
-// A round button that grows slightly on hover; light and large versions sit on the dark Contact section.
+// A round button that grows slightly on hover; light and large versions sit on the dark Contact section, and the
+// espresso one on About's café cream.
 // It's a link when given an href, and a plain button when given an onClick.
 function CircleButton({ href, onClick, children, variant = "dark", size = "md" }: CircleButtonProps){
-    const className = `flex items-center justify-center rounded-full font-medium transition-transform duration-300 hover:scale-105 ${VARIANTS[variant]} ${SIZES[size]}`;
+    const className = `flex items-center justify-center rounded-full px-3 text-center leading-tight font-medium transition-transform duration-300 hover:scale-105 ${VARIANTS[variant]} ${SIZES[size]}`;
 
     if (href !== undefined) {
         return <a href={href} className={className}>{children}</a>;
