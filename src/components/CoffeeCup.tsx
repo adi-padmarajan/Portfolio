@@ -12,15 +12,10 @@ const SAUCER_R = 182;
 const CUP_R = 120;
 const WALL_R = 110;
 const COFFEE_R = 100;
+// The cup's floor, which the coffee covers first before its level rises up the tapering wall
+const FLOOR_R = 72;
 // Every transform turns and scales about the cup's centre, so nothing drifts off-axis
 const CENTRE = `${C} ${C}`;
-// Where the pour lands (a little off-centre, as from a pot held to one side) and the radius of the cup's
-// floor, which the coffee covers before its level rises up the tapering wall
-const POUR = { x: C + 30, y: C - 24 };
-const FLOOR_R = 72;
-// The stream falls from a pot held above and to the side, out of frame, curving down onto the pour point
-const STREAM_FROM = { x: POUR.x + 46, y: POUR.y - 80 };
-const STREAM = `M${STREAM_FROM.x} ${STREAM_FROM.y} Q${POUR.x + 14} ${POUR.y - 36} ${POUR.x} ${POUR.y}`;
 
 // Soft wisps of steam curling up off the surface
 const STEAM = [
@@ -36,8 +31,9 @@ type CoffeeCupProps = {
     delay?: number;
 };
 
-// A cup of black coffee seen from above. It's set down on its saucer, poured, and left steaming; the surface catches
-// the light as the cursor moves, and pressing the cup sends rings out from the middle, like a knock on the table.
+// A cup of black coffee seen from above. It's set down on its saucer and filled from directly overhead, the last
+// drop lands, and it's left steaming. The surface catches the light as the cursor moves, and pressing the cup sends
+// rings out from the middle, like a knock on the table.
 function CoffeeCup({ delay = 0 }: CoffeeCupProps){
     const id = useId();
     // Read once: without motion the cup is just a picture, so it isn't offered as a button
@@ -45,15 +41,15 @@ function CoffeeCup({ delay = 0 }: CoffeeCupProps){
     const buttonRef = useRef<HTMLButtonElement>(null);
     const cupRef = useRef<SVGGElement>(null);
     const shadowRef = useRef<SVGCircleElement>(null);
+    const levelRef = useRef<SVGCircleElement>(null);
+    const edgeRef = useRef<SVGCircleElement>(null);
     const liquidRef = useRef<SVGGElement>(null);
+    const tintRef = useRef<SVGCircleElement>(null);
     const ripplesRef = useRef<SVGGElement>(null);
     const lightRef = useRef<SVGGElement>(null);
+    const dropRef = useRef<SVGGElement>(null);
+    const reboundRef = useRef<SVGCircleElement>(null);
     const steamRef = useRef<SVGGElement>(null);
-    const poolRef = useRef<SVGCircleElement>(null);
-    const edgeRef = useRef<SVGCircleElement>(null);
-    const tintRef = useRef<SVGCircleElement>(null);
-    const frothRef = useRef<SVGGElement>(null);
-    const streamRef = useRef<SVGGElement>(null);
 
     useLayoutEffect(() => {
         const mm = gsap.matchMedia();
@@ -61,22 +57,22 @@ function CoffeeCup({ delay = 0 }: CoffeeCupProps){
             const button = buttonRef.current;
             if (!button) return;
             const wisps = gsap.utils.toArray<SVGPathElement>(steamRef.current!.children);
-            gsap.set([cupRef.current, shadowRef.current, liquidRef.current, lightRef.current, ...wisps], { svgOrigin: CENTRE });
-            let poured = false;
+            gsap.set([cupRef.current, shadowRef.current, lightRef.current, dropRef.current, reboundRef.current, ...wisps], { svgOrigin: CENTRE });
+            let filled = false;
 
-            // Rings spreading evenly from a point (the centre, unless the pour is landing): a light crest with
-            // a dark trough just inside it. They grow by scaling while their strokes keep their weight, so every
-            // ring stays perfectly round.
-            const ripple = (strength: number, waves = 3, x = C, y = C, reach = 1.02) => {
+            // Rings spreading evenly from the centre: a light crest with a dark trough just inside it. They grow by
+            // scaling while their strokes keep their weight, and the surface they're clipped to is centred on the
+            // same point, so every ring stays perfectly round.
+            const ripple = (strength: number, waves = 3) => {
                 for (let i = 0; i < waves; i++) {
                     const wave = document.createElementNS(SVG_NS, "g");
                     wave.innerHTML =
-                        `<circle cx="${x}" cy="${y}" r="${COFFEE_R}" fill="none" stroke="rgb(255 226 196 / 0.55)" stroke-width="1.6" vector-effect="non-scaling-stroke" />` +
-                        `<circle cx="${x}" cy="${y}" r="${COFFEE_R - 4}" fill="none" stroke="rgb(0 0 0 / 0.6)" stroke-width="2.2" vector-effect="non-scaling-stroke" />`;
+                        `<circle cx="${C}" cy="${C}" r="${COFFEE_R}" fill="none" stroke="rgb(255 226 196 / 0.55)" stroke-width="1.6" vector-effect="non-scaling-stroke" />` +
+                        `<circle cx="${C}" cy="${C}" r="${COFFEE_R - 4}" fill="none" stroke="rgb(0 0 0 / 0.6)" stroke-width="2.2" vector-effect="non-scaling-stroke" />`;
                     ripplesRef.current?.appendChild(wave);
-                    gsap.set(wave, { svgOrigin: `${x} ${y}`, scale: 0.03, opacity: strength * (1 - i * 0.25) });
+                    gsap.set(wave, { svgOrigin: CENTRE, scale: 0.03, opacity: strength * (1 - i * 0.25) });
                     gsap.to(wave, {
-                        scale: reach,
+                        scale: 1,
                         opacity: 0,
                         duration: 2.2,
                         delay: i * 0.28,
@@ -94,70 +90,35 @@ function CoffeeCup({ delay = 0 }: CoffeeCupProps){
                 });
             };
 
-            // A few tan bubbles kicked up where the stream lands, drifting outward before they pop
-            const froth = () => {
-                for (let i = 0; i < 3; i++) {
-                    const bubble = document.createElementNS(SVG_NS, "circle");
-                    const angle = gsap.utils.random(0, Math.PI * 2);
-                    const reach = gsap.utils.random(8, 26);
-                    bubble.setAttribute("cx", String(POUR.x + gsap.utils.random(-4, 4)));
-                    bubble.setAttribute("cy", String(POUR.y + gsap.utils.random(-4, 4)));
-                    bubble.setAttribute("r", String(gsap.utils.random(1.2, 3.2)));
-                    bubble.setAttribute("fill", "#c4925f");
-                    frothRef.current?.appendChild(bubble);
-                    gsap.fromTo(bubble, { opacity: 0.8 }, {
-                        x: Math.cos(angle) * reach,
-                        y: Math.sin(angle) * reach,
-                        opacity: 0,
-                        scale: 0.4,
-                        duration: gsap.utils.random(0.9, 1.6),
-                        ease: "power2.out",
-                        onComplete: () => bubble.remove(),
-                    });
-                }
-            };
+            // While the cup fills, the stream from overhead keeps the middle of the surface gently stirring
+            const filling = gsap.timeline({ repeat: 4 })
+              .add(() => ripple(0.28, 1))
+              .to({}, { duration: 0.36 });
 
-            // While the stream runs, the spot where it lands keeps churning: small rings and froth
-            const churn = gsap.timeline({ repeat: 7 })
-              .add(() => {
-                ripple(0.4, 1, POUR.x, POUR.y, 0.55);
-                froth();
-            })
-              .to({}, { duration: 0.2 });
+            // The level: the clip that shapes the coffee and the amber line along its edge, which rise together
+            const level = [levelRef.current, edgeRef.current];
 
-            // Set the cup down on its saucer (the shadow tightening as it lands), then pour: the stream reaches
-            // the cup, the coffee pools where it lands and spreads across the floor, and the level rises until
-            // the surface meets the wall. A thin layer of coffee looks amber, so it deepens as it fills. Once the
-            // stream stops, the last drip and a settling ring still the surface, the window's reflection forms on
-            // it, and the steam rises.
-            // The clip that shapes the coffee and the amber line along its edge move as one
-            const pool = [poolRef.current, edgeRef.current];
+            // Set the cup down on its saucer (the shadow tightening as it lands). Then it fills from directly
+            // overhead: a thin film of coffee spreads across the floor, translucent amber at first, and the level
+            // rises evenly up the wall as it deepens to near-black. Last, one drop falls (shrinking as it falls away
+            // from us), lands dead centre with a little rebound and a set of rings, and the steam rises.
             const intro = gsap.timeline({ delay, defaults: { ease: "power3.out" } })
               .from(button, { autoAlpha: 0, duration: 0.8 })
               .from(cupRef.current, { scale: 1.12, y: -10, duration: 1.1 }, 0)
               .from(shadowRef.current, { scale: 1.25, x: 18, y: 24, opacity: 0, duration: 1.1 }, 0)
-              .set(streamRef.current, { autoAlpha: 1 }, 0.8)
-              .fromTo(streamRef.current!.children, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.3, ease: "power2.in" }, 0.8)
-              // A falling stream is never quite steady: its body swells and narrows as it pours
-              .fromTo(streamRef.current!.firstElementChild, { attr: { "stroke-width": 9 } }, {
-                attr: { "stroke-width": 7 },
-                duration: 0.16,
-                ease: "sine.inOut",
-                yoyo: true,
-                repeat: 11,
-            }, 1.0)
-              .fromTo(pool, { attr: { cx: POUR.x, cy: POUR.y, r: 0 } }, { attr: { r: 26 }, duration: 0.35, ease: "power2.out" }, 1.1)
-              .add(churn, 1.1)
-              .to(pool, { attr: { cx: C + 8, cy: C - 6, r: FLOOR_R }, duration: 0.9, ease: "sine.inOut" }, 1.45)
-              .to(pool, { attr: { cx: C, cy: C, r: COFFEE_R }, duration: 1.1, ease: "power2.out" }, 2.35)
-              .fromTo(tintRef.current, { opacity: 0.7 }, { opacity: 0, duration: 2.3, ease: "power1.in" }, 1.1)
-              .to(streamRef.current!.children, { strokeDashoffset: -1, duration: 0.35, ease: "power2.in" }, 2.75)
-              .add(() => ripple(0.35, 1, POUR.x, POUR.y, 0.5), 3.1)
-              .add(() => ripple(0.5), 3.4)
-              .from(lightRef.current, { autoAlpha: 0, duration: 1.2, ease: "sine.out" }, 3.3)
-              .from(steamRef.current, { autoAlpha: 0, duration: 1.6, ease: "sine.inOut" }, 3.4)
-              .set(streamRef.current, { autoAlpha: 0 })
-              .add(() => { poured = true; });
+              .from([liquidRef.current, edgeRef.current], { opacity: 0, duration: 0.25, ease: "sine.out" }, 0.9)
+              .fromTo(tintRef.current, { opacity: 0.6 }, { opacity: 0, duration: 2.2, ease: "sine.in" }, 0.9)
+              .add(filling, 1.0)
+              .fromTo(level, { attr: { r: FLOOR_R } }, { attr: { r: COFFEE_R }, duration: 1.9, ease: "sine.inOut" }, 1.1)
+              .from(lightRef.current, { autoAlpha: 0, duration: 1, ease: "sine.out" }, 2.6)
+              .fromTo(dropRef.current, { autoAlpha: 0, scale: 2.4 }, { autoAlpha: 1, duration: 0.12, ease: "none" }, 3.15)
+              .to(dropRef.current, { scale: 0.5, duration: 0.42, ease: "power2.in" }, 3.15)
+              .set(dropRef.current, { autoAlpha: 0 }, 3.57)
+              .add(() => ripple(0.85), 3.57)
+              .fromTo(reboundRef.current, { scale: 0, autoAlpha: 1 }, { scale: 1, duration: 0.18, ease: "power2.out" }, 3.6)
+              .to(reboundRef.current, { scale: 0, autoAlpha: 0, duration: 0.3, ease: "power2.in" }, 3.78)
+              .from(steamRef.current, { autoAlpha: 0, duration: 1.6, ease: "sine.inOut" }, 3.8)
+              .add(() => { filled = true; });
 
             // Each wisp rises, sways and fades in its own rhythm
             const loops: gsap.core.Animation[] = wisps.map((wisp, i) =>
@@ -170,7 +131,7 @@ function CoffeeCup({ delay = 0 }: CoffeeCupProps){
 
             // Now and then the surface stirs on its own, so the cup feels alive even when nobody touches it
             loops.push(
-                gsap.timeline({ paused: true, repeat: -1, delay: delay + 8 })
+                gsap.timeline({ paused: true, repeat: -1, delay: delay + 9 })
                   .add(() => ripple(0.22, 2))
                   .to({}, { duration: 6 }),
             );
@@ -183,12 +144,10 @@ function CoffeeCup({ delay = 0 }: CoffeeCupProps){
                 onToggle: (self) => loops.forEach((loop) => (self.isActive ? loop.resume() : loop.pause())),
             });
 
-            // The light on the surface leans away from the cursor, and the coffee (sitting lower than the rim)
-            // drifts a touch against it, so the cup reads as having depth
+            // The light on the surface leans away from the cursor, as a reflection would. Only the light moves,
+            // so the surface itself (and every ring on it) stays centred in the cup.
             const lightX = gsap.quickTo(lightRef.current, "x", { duration: 1.2, ease: "power3.out" });
             const lightY = gsap.quickTo(lightRef.current, "y", { duration: 1.2, ease: "power3.out" });
-            const liquidX = gsap.quickTo(liquidRef.current, "x", { duration: 1.4, ease: "power3.out" });
-            const liquidY = gsap.quickTo(liquidRef.current, "y", { duration: 1.4, ease: "power3.out" });
             const onMove = (e: PointerEvent) => {
                 if (e.pointerType !== "mouse") return;
                 const rect = button.getBoundingClientRect();
@@ -196,15 +155,13 @@ function CoffeeCup({ delay = 0 }: CoffeeCupProps){
                 const ny = gsap.utils.clamp(-1, 1, (e.clientY - (rect.top + rect.height / 2)) / (window.innerHeight / 2));
                 lightX(-nx * 16);
                 lightY(-ny * 12);
-                liquidX(nx * 3);
-                liquidY(ny * 3);
             };
 
             // Tactile feedback: the cup gives under a press, springs back, and a click knocks it with a little clink
             const press = () => gsap.to(cupRef.current, { scale: 0.96, duration: 0.18, ease: "power2.out", overwrite: "auto" });
             const release = () => gsap.to(cupRef.current, { scale: 1, duration: 0.9, ease: "elastic.out(1, 0.35)", overwrite: "auto" });
             const clink = () => {
-                if (!poured) return;
+                if (!filled) return;
                 gsap.to(cupRef.current, { keyframes: { rotate: [0, 3, -2, 1, 0] }, duration: 0.6, ease: "power1.inOut" });
                 ripple(0.9);
             };
@@ -241,8 +198,7 @@ function CoffeeCup({ delay = 0 }: CoffeeCupProps){
                 button.removeEventListener("click", clink);
                 loops.forEach((loop) => loop.kill());
                 intro.kill();
-                churn.kill();
-                frothRef.current?.replaceChildren();
+                filling.kill();
                 visibility.kill();
                 ripplesRef.current?.replaceChildren();
             };
@@ -292,6 +248,12 @@ function CoffeeCup({ delay = 0 }: CoffeeCupProps){
                     <stop offset="0%" stopColor="#fff4e8" stopOpacity="0.32" />
                     <stop offset="100%" stopColor="#fff4e8" stopOpacity="0" />
                 </radialGradient>
+                {/* A falling drop, lit from the top left like everything else */}
+                <radialGradient id={`${id}-drop`} cx="38%" cy="34%" r="70%">
+                    <stop offset="0%" stopColor="#8a5530" />
+                    <stop offset="55%" stopColor="#3a1f0e" />
+                    <stop offset="100%" stopColor="#170b05" />
+                </radialGradient>
                 <filter id={`${id}-shadow`} x="-50%" y="-50%" width="200%" height="200%">
                     <feGaussianBlur stdDeviation="9" />
                 </filter>
@@ -301,24 +263,10 @@ function CoffeeCup({ delay = 0 }: CoffeeCupProps){
                 <filter id={`${id}-steam`} x="-100%" y="-50%" width="300%" height="200%">
                     <feGaussianBlur stdDeviation="6" />
                 </filter>
-                {/* The coffee's outline: it starts as a pool where the pour lands and spreads to fill the cup */}
+                {/* The coffee's level: centred in the cup, widening as it rises */}
                 <clipPath id={`${id}-surface`}>
-                    <circle ref={poolRef} cx={C} cy={C} r={COFFEE_R} />
+                    <circle ref={levelRef} cx={C} cy={C} r={COFFEE_R} />
                 </clipPath>
-                {/* The stream fades in from nothing at its far end, since the pot it pours from is out of frame */}
-                <linearGradient id={`${id}-stream`} gradientUnits="userSpaceOnUse" x1={STREAM_FROM.x} y1={STREAM_FROM.y} x2={POUR.x} y2={POUR.y}>
-                    <stop offset="0%" stopColor="#7a4622" stopOpacity="0" />
-                    <stop offset="40%" stopColor="#5c3317" stopOpacity="0.85" />
-                    <stop offset="100%" stopColor="#2a160a" />
-                </linearGradient>
-                <linearGradient id={`${id}-glint`} gradientUnits="userSpaceOnUse" x1={STREAM_FROM.x} y1={STREAM_FROM.y} x2={POUR.x} y2={POUR.y}>
-                    <stop offset="0%" stopColor="#f0cfa8" stopOpacity="0" />
-                    <stop offset="50%" stopColor="#f0cfa8" stopOpacity="0.5" />
-                    <stop offset="100%" stopColor="#f0cfa8" stopOpacity="0.2" />
-                </linearGradient>
-                <filter id={`${id}-liquid`} x="-50%" y="-50%" width="200%" height="200%">
-                    <feGaussianBlur stdDeviation="0.8" />
-                </filter>
             </defs>
 
             {/* Saucer, with the shallow well the cup sits in */}
@@ -336,37 +284,37 @@ function CoffeeCup({ delay = 0 }: CoffeeCupProps){
                     <rect x={C + 100} y={C - 16} width={66} height={32} rx={16} fill={`url(#${id}-handle)`} stroke="#dcd8d3" strokeWidth={0.8} />
                 </g>
 
-                {/* The cup's outside and glazed rim, then the inner wall dropping down to the coffee */}
+                {/* The cup's outside and glazed rim, then the inner wall dropping down to the floor */}
                 <circle cx={C} cy={C} r={CUP_R} fill={`url(#${id}-cup)`} stroke="#d8d4cf" strokeWidth={0.8} />
                 <circle cx={C} cy={C} r={CUP_R - 2} fill="none" stroke="#ffffff" strokeWidth={2} />
                 <circle cx={C} cy={C} r={WALL_R} fill={`url(#${id}-wall)`} stroke="#e0dcd7" strokeWidth={0.8} />
-                {/* Where the wall curves into the floor, seen in the empty cup before the pour */}
+                {/* Where the wall curves into the floor, seen in the empty cup */}
                 <circle cx={C} cy={C} r={FLOOR_R} fill="none" stroke="#000000" strokeOpacity={0.07} strokeWidth={3} filter={`url(#${id}-blur)`} />
 
                 <g clipPath={`url(#${id}-surface)`}>
                     <g ref={liquidRef}>
                         <circle cx={C} cy={C} r={COFFEE_R + 4} fill={`url(#${id}-coffee)`} />
                         {/* Shallow coffee is translucent amber; this fades as the cup fills */}
-                        <circle ref={tintRef} cx={C} cy={C} r={COFFEE_R + 4} fill="#8a5126" opacity={0} />
+                        <circle ref={tintRef} cx={C} cy={C} r={COFFEE_R + 4} fill="#5e3214" opacity={0} />
                         <g ref={ripplesRef} />
-                        <g ref={frothRef} />
                         {/* A window's soft reflection and a sharper glint of light */}
                         <g ref={lightRef}>
                             <ellipse cx={C - 30} cy={C - 36} rx={52} ry={26} transform={`rotate(-32 ${C - 30} ${C - 36})`} fill={`url(#${id}-glow)`} />
                             <ellipse cx={C - 42} cy={C - 46} rx={16} ry={5} transform={`rotate(-32 ${C - 42} ${C - 46})`} fill="#fff8f0" opacity={0.55} filter={`url(#${id}-blur)`} />
                         </g>
+                        <circle cx={C} cy={C} r={COFFEE_R} fill={`url(#${id}-rim-shadow)`} />
+                        {/* The tiny jet that bounces back up where the last drop lands */}
+                        <circle ref={reboundRef} cx={C} cy={C} r={5} fill={`url(#${id}-drop)`} visibility="hidden" />
                     </g>
-                    <circle cx={C} cy={C} r={COFFEE_R} fill={`url(#${id}-rim-shadow)`} />
                 </g>
-                {/* The thin amber line where the coffee meets the porcelain, following the edge as it spreads */}
+                {/* The thin amber line where the coffee meets the porcelain, rising with the level */}
                 <circle ref={edgeRef} cx={C} cy={C} r={COFFEE_R} fill="none" stroke="#9a6236" strokeOpacity={0.5} strokeWidth={1.2} />
             </g>
 
-            {/* The stream from the pot, seen from above: a short falling streak with a glint along it. It only
-                shows during the pour, drawing down into the cup and then falling in after its last drop. */}
-            <g ref={streamRef} fill="none" strokeLinecap="round" visibility="hidden" filter={`url(#${id}-liquid)`}>
-                <path d={STREAM} pathLength={1} strokeDasharray="1 1" stroke={`url(#${id}-stream)`} strokeWidth={8} />
-                <path d={STREAM} pathLength={1} strokeDasharray="1 1" stroke={`url(#${id}-glint)`} strokeWidth={1.6} transform="translate(-2 -0.5)" />
+            {/* The last drop, falling straight down into the middle of the cup */}
+            <g ref={dropRef} visibility="hidden">
+                <circle cx={C} cy={C} r={8} fill={`url(#${id}-drop)`} />
+                <circle cx={C - 2.5} cy={C - 3} r={1.8} fill="#fff4e8" opacity={0.7} />
             </g>
 
             <g ref={steamRef} fill="none" stroke="#d6d0ca" strokeOpacity={0.3} strokeWidth={11} strokeLinecap="round" filter={`url(#${id}-steam)`}>

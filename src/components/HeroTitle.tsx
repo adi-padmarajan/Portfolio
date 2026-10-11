@@ -54,7 +54,7 @@ function HeroTitle({ introActive }: HeroTitleProps){
                 ease: "power3.out",
             }, "-=0.6")
               // Once the coffee's poured, a quiet caption says what's in the cup
-              .from(fuelRef.current, { y: 10, autoAlpha: 0, duration: 0.8, ease: "power3.out" }, 4.2);
+              .from(fuelRef.current, { y: 10, autoAlpha: 0, duration: 0.8, ease: "power3.out" }, 4.6);
         });
         return () => mm.revert();
     }, [entranceDelay]);
