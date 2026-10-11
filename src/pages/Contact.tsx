@@ -3,36 +3,69 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { MOTION_OK } from "../lib/motion";
 import {
+    AwakeStatus,
     BackToTopLink,
-    CircleButton,
-    ContactTitle,
-    CopyEmailButton,
+    ContactRow,
     EMAIL,
-    FooterItem,
-    LocalTime,
-    PillLink,
+    GreetingRoll,
+    NAV_LINKS,
     SOCIAL_LINKS,
-    SocialLink,
+    Wordmark,
 } from "../components";
+import { WORDMARK_HEIGHT } from "../components/wordmarkGeometry";
 
 gsap.registerPlugin(ScrollTrigger);
 
-function Contact(){
-    const contentRef = useRef<HTMLDivElement>(null);
+// Every section but this one, for the footer's short index
+const SECTION_LINKS = NAV_LINKS.filter((link) => link.href !== "#contact");
 
-    // Fade the headline, button and email pills in one after another as they scroll into view
+function Contact(){
+    const rootRef = useRef<HTMLDivElement>(null);
+    const lettersRef = useRef<SVGGElement>(null);
+
     useLayoutEffect(() => {
-        const mm = gsap.matchMedia(contentRef);
+        const root = rootRef.current;
+        if (!root) return;
+
+        const mm = gsap.matchMedia(rootRef);
         mm.add(MOTION_OK, () => {
-            gsap.from("[data-animate]", {
-                y: 30,
-                opacity: 0,
-                duration: 0.8,
+            // The label, headline and note rise in together
+            gsap.from(root.querySelectorAll("[data-reveal]"), {
+                y: 40,
+                autoAlpha: 0,
+                duration: 1,
                 ease: "power3.out",
+                stagger: 0.12,
+                scrollTrigger: {
+                    trigger: root,
+                    start: "top 70%",
+                },
+            });
+
+            // As in Experience: each rule draws across, and its row settles in just behind it
+            root.querySelectorAll<HTMLElement>("[data-row]").forEach((row) => {
+                gsap.timeline({
+                    defaults: { ease: "power3.out" },
+                    scrollTrigger: {
+                        trigger: row,
+                        start: "top 90%",
+                    },
+                })
+                  .from(row.querySelector("[data-rule]"), { scaleX: 0, duration: 1.2, ease: "power4.inOut" })
+                  .from(row.querySelector("[data-content]"), { y: 24, autoAlpha: 0, duration: 0.9 }, "-=0.7");
+            });
+
+            // The name rises out of the page's bottom edge, letter by letter, in step with the last of the scroll.
+            // The hero dives into the d; the page ends with the whole word back in view.
+            gsap.from(lettersRef.current?.children ?? [], {
+                y: WORDMARK_HEIGHT * 1.1,
+                ease: "none",
                 stagger: 0.15,
                 scrollTrigger: {
-                    trigger: contentRef.current,
-                    start: "top 85%",
+                    trigger: "[data-wordmark]",
+                    start: "top bottom",
+                    end: "bottom bottom",
+                    scrub: 0.6,
                 },
             });
         });
@@ -41,65 +74,75 @@ function Contact(){
 
     const year = new Date().getFullYear();
 
-    // A dark closing screen: the invitation fills the space, and the footer details sit along the bottom edge
+    // The last screen: an open invitation, the ways to reach me, then a closing footer signed with the wordmark
     return(
-        <div ref={contentRef} className="flex min-h-svh flex-col bg-neutral-950 text-white">
-            <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-6 pt-28 pb-16 md:px-10 lg:px-12">
-                <ContactTitle />
+        <div ref={rootRef} className="overflow-hidden bg-neutral-950 text-white">
+            <div className="mx-auto max-w-6xl px-6 pt-32 pb-24 sm:pt-40 sm:pb-32 md:px-10 lg:px-12">
+                <h2 data-reveal className="text-xs font-medium tracking-widest text-white/40 uppercase">
+                    Contact
+                </h2>
 
-                <div className="mt-6 flex items-end justify-between gap-6 sm:mt-8">
-                    <p data-animate className="text-5xl leading-[0.95] font-medium tracking-tight sm:text-7xl lg:text-8xl">
-                        Let’s work
-                        <br />
-                        together
-                    </p>
-                    <span aria-hidden="true" className="hidden text-3xl text-white/60 md:block lg:text-4xl">
-                        ↙
+                <p
+                    data-reveal
+                    className="mt-8 text-6xl leading-none font-medium tracking-tight sm:mt-10 sm:text-8xl lg:text-9xl"
+                >
+                    <span className="sr-only">Say hello</span>
+                    <span aria-hidden="true">
+                        <span className="text-white/40">Say</span> <GreetingRoll />
                     </span>
-                </div>
+                </p>
 
-                {/* The button straddles the rule, as if it were resting on it */}
-                <div className="relative mt-16 sm:mt-24">
-                    <div className="h-px bg-white/15" />
-                    <div className="absolute top-1/2 right-0 -translate-y-1/2 sm:right-12 lg:right-24">
-                        <div data-animate>
-                            <CircleButton href={`mailto:${EMAIL}`} variant="light" size="lg">
-                                Get in touch
-                            </CircleButton>
+                <div className="mt-16 grid grid-cols-1 gap-12 sm:mt-24 lg:grid-cols-12 lg:gap-6">
+                    <div className="flex flex-col gap-8 lg:col-span-4">
+                        <p data-reveal className="text-lg leading-relaxed text-white/60 sm:text-xl">
+                            Whether it’s a role, a project or a hackathon team that needs one more,{" "}
+                            <span className="text-white">my inbox is open.</span>
+                        </p>
+                        <div data-reveal>
+                            <AwakeStatus />
+                        </div>
+                    </div>
+
+                    <div className="lg:col-span-8 lg:col-start-5">
+                        <ul>
+                            <ContactRow label="Email" value={EMAIL} href={`mailto:${EMAIL}`} copy />
+                            {SOCIAL_LINKS.map((link) => (
+                                <ContactRow key={link.href} label={link.label} value={link.handle} href={link.href} />
+                            ))}
+                        </ul>
+                        <div data-row>
+                            <div data-rule className="h-px origin-left bg-white/15" />
                         </div>
                     </div>
                 </div>
-
-                <div data-animate className="mt-20 flex flex-col gap-3 sm:mt-28 sm:flex-row sm:flex-wrap sm:gap-4">
-                    <PillLink href={`mailto:${EMAIL}`}>{EMAIL}</PillLink>
-                    <CopyEmailButton />
-                </div>
             </div>
 
-            <footer className="grid grid-cols-2 gap-x-6 gap-y-10 px-6 pt-10 pb-8 md:grid-cols-12 md:px-10 md:pb-10 lg:px-12">
-                <div className="md:col-span-3">
-                    <FooterItem label="Copyright">&copy; {year} Aditya Padmarajan</FooterItem>
-                </div>
-
-                <div className="md:col-span-3">
-                    <FooterItem label="Local time">
-                        <LocalTime />
-                    </FooterItem>
-                </div>
-
-                <div className="col-span-2 md:col-span-6 md:justify-self-end">
-                    <FooterItem label="Socials">
-                        <ul className="flex flex-wrap gap-x-8 gap-y-2">
-                            {SOCIAL_LINKS.map((link) => (
+            <footer className="px-6 pb-6 md:px-10 md:pb-8 lg:px-12">
+                <div className="flex flex-col gap-6 border-t border-white/10 pt-6 text-sm text-white/50 sm:flex-row sm:items-center sm:justify-between">
+                    <p>&copy; {year} Aditya Padmarajan</p>
+                    <nav aria-label="Footer">
+                        <ul className="flex flex-wrap gap-x-6 gap-y-2">
+                            {SECTION_LINKS.map((link) => (
                                 <li key={link.href}>
-                                    <SocialLink label={link.label} href={link.href} />
+                                    <a href={link.href} className="transition-colors hover:text-white">
+                                        {link.label}
+                                    </a>
                                 </li>
                             ))}
-                            <li className="text-white/80">
+                            <li>
                                 <BackToTopLink />
                             </li>
                         </ul>
-                    </FooterItem>
+                    </nav>
+                </div>
+
+                {/* The SVG's edge masks the letters as they rise; capped by height so it never outgrows the screen */}
+                <div
+                    data-wordmark
+                    aria-hidden="true"
+                    className="mx-auto mt-10 w-[min(100%,calc(62svh*1.9))] text-white sm:mt-16"
+                >
+                    <Wordmark letterRef={lettersRef} />
                 </div>
             </footer>
         </div>

@@ -2,6 +2,6 @@
 export const EMAIL = "aditya.padmarajan@gmail.com";
 
 export const SOCIAL_LINKS = [
-    { label: "GitHub", href: "https://github.com/adi-padmarajan" },
-    { label: "LinkedIn", href: "https://www.linkedin.com/in/aditya-padmarajan" },
+    { label: "LinkedIn", handle: "in/aditya-padmarajan", href: "https://www.linkedin.com/in/aditya-padmarajan" },
+    { label: "GitHub", handle: "@adi-padmarajan", href: "https://github.com/adi-padmarajan" },
 ];

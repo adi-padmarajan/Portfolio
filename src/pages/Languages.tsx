@@ -1,20 +1,7 @@
 import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
-import { GREETING_TEXT } from "../components/greetingText";
+import { GREETINGS as greetings, GREETING_TEXT } from "../components/greetingText";
 import { lockScroll, unlockScroll } from "../lib/smoothScroll";
-
-const greetings = [
-    { text: "你好", lang: "zh" },
-    { text: "こんにちは", lang: "ja" },
-    { text: "Hola", lang: "es" },
-    { text: "Hallo", lang: "de" },
-    { text: "നമസ്കാരം", lang: "ml" },
-    { text: "Olá", lang: "pt" },
-    { text: "Привет", lang: "ru" },
-    { text: "नमस्ते", lang: "hi" },
-    { text: "안녕하세요", lang: "ko" },
-    { text: "Hello", lang: "en" },
-];
 
 type LanguagesProps = {
     // Called when the overlay starts sliding away, so the site can mount underneath
