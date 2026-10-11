@@ -17,3 +17,6 @@ export { default as ScrollCue } from "./ScrollCue";
 export { EXPERIENCES } from "./experiences";
 export type { Experience } from "./experiences";
 export { default as ExperienceDialog } from "./ExperienceDialog";
+export { PROJECTS } from "./projects";
+export type { Project } from "./projects";
+export { default as ProjectCard } from "./ProjectCard";

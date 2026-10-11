@@ -23,4 +23,43 @@
       transform: translateY(100%);
     }
   }
+
+  /* The project covers' ambient motion: a ride moving along its route, a sensor's tingle,
+     a radar sweep and data clouds settling into cohorts */
+  --animate-route-dash: route-dash 2s linear infinite;
+  --animate-sense-ping: sense-ping 2.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  --animate-radar-sweep: radar-sweep 6s linear infinite;
+  --animate-cluster-drift: cluster-drift 6s ease-in-out infinite alternate;
+
+  @keyframes route-dash {
+    to {
+      stroke-dashoffset: -28;
+    }
+  }
+
+  @keyframes sense-ping {
+    from {
+      transform: scale(0.6);
+      opacity: 0.9;
+    }
+    to {
+      transform: scale(2.6);
+      opacity: 0;
+    }
+  }
+
+  @keyframes radar-sweep {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes cluster-drift {
+    from {
+      transform: translate(-4px, 3px);
+    }
+    to {
+      transform: translate(4px, -3px);
+    }
+  }
 }
