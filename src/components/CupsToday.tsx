@@ -12,7 +12,7 @@ function CupsToday(){
         return () => clearInterval(interval);
     }, []);
 
-    return <span data-count={cups}>{cups}</span>;
+    return <span>{cups}</span>;
 }
 
 export default CupsToday;

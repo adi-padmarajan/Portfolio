@@ -7,7 +7,8 @@ import { MOTION_OK } from "../lib/motion";
 
 gsap.registerPlugin(ScrollTrigger);
 
-// A few numbers that say more than a paragraph could. A value marked with data-count counts up from zero.
+// A few numbers that say more than a paragraph could. A value marked with data-count counts up from zero; the live
+// cup count isn't, since it can change while the page is open and React needs to stay in charge of it.
 const FACTS: { label: string; value: ReactNode }[] = [
     { label: "Full marathons", value: <span data-count="6">6</span> },
     { label: "Race distance", value: <><span data-count="42.2" data-decimals="1">42.2</span><span className="ml-1 text-[0.5em] tracking-normal">km</span></> },
@@ -51,8 +52,9 @@ function AboutFacts(){
         return () => mm.revert();
     }, []);
 
+    // Three across wherever they fit (from 300px, so every common phone); stacked on the narrowest screens
     return(
-        <dl ref={factsRef} className="grid grid-cols-[repeat(3,auto)] justify-between gap-x-5 sm:gap-x-8">
+        <dl ref={factsRef} className="grid grid-cols-1 justify-between gap-x-5 gap-y-6 min-[300px]:grid-cols-[repeat(3,auto)] sm:gap-x-8">
             {FACTS.map((fact) => (
                 <div key={fact.label} className="flex flex-col-reverse justify-end gap-2 sm:gap-3">
                     <dt className="text-[0.625rem] font-medium tracking-widest text-gray-400 uppercase sm:text-xs">{fact.label}</dt>
