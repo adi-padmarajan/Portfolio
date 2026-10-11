@@ -2,6 +2,9 @@
 /* Lenis drives scrolling, so the native smooth scroll would fight it; these are its required base styles */
 @import "lenis/dist/lenis.css";
 
+/* Phones turned on their side: too short to stack the hero, so the cup moves beside the words as on desktop */
+@custom-variant short (@media (orientation: landscape) and (max-height: 540px));
+
 /* One clear, on-brand focus ring for keyboard users instead of the browser's default blue box.
    It follows the element's colour and rounding, and never shows for mouse clicks. */
 @layer base {
