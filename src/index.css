@@ -24,6 +24,18 @@
     }
   }
 
+  /* A short segment running along the hero's line with no finish, off past the screen's edge and round again */
+  --animate-finish-line: finish-line 3.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+
+  @keyframes finish-line {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(400%);
+    }
+  }
+
   /* The project covers' ambient motion: a ride moving along its route, a sensor's tingle,
      a radar sweep and data clouds settling into cohorts */
   --animate-route-dash: route-dash 2s linear infinite;
