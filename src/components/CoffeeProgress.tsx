@@ -1,49 +1,60 @@
-import { useId, useLayoutEffect, useRef } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import DrinkIcon from "./DrinkIcon";
+import DrinkPicker from "./DrinkPicker";
+import { drinkName, setCoffeeOrder, useCoffeeOrder } from "../lib/coffeeOrder";
+import type { DrinkId } from "../lib/coffeeOrder";
 import { prefersReducedMotion } from "../lib/motion";
 import { scrollToHash } from "../lib/smoothScroll";
 
 gsap.registerPlugin(ScrollTrigger);
 
-// A small cup, seen from above like the hero's, in a 100-unit square
-const C = 50;
-const COFFEE_R = 27;
-
-// How far down the page you are, as a cup of coffee you finish as you read. It turns up once you're past About
-// (the hero and About each have their own cup), empties as you scroll towards the end and fills again on the way back up. It's also the
-// way home: pressing it glides back to the top.
 // It never sits in the way: where there's no clear margin beside the content it steps aside while you read on and
 // comes back as soon as you scroll up, and it bows out at the footer, which has its own way back to the top.
 const WIDE = "(min-width: 1280px)";
+
+// The visitor's order, in the corner: the drink they chose in the intro, emptying as they read down the page and
+// filling again on the way back up. It turns up once they're past About (the hero and About each have their own
+// coffee). Pressing it opens "Your order", to switch drinks or head back to the top.
 function CoffeeProgress(){
-    const id = useId();
+    const popoverId = useId();
+    const order = useCoffeeOrder();
+    const [open, setOpen] = useState(false);
+    const openRef = useRef(false);
+    const rootRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
-    const levelRef = useRef<SVGCircleElement>(null);
+    const iconRef = useRef<HTMLSpanElement>(null);
+    const surfaceRef = useRef<SVGCircleElement>(null);
+    const popoverRef = useRef<HTMLDivElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
+    const progress = useRef(0);
+    const syncRef = useRef<() => void>(() => {});
 
     useLayoutEffect(() => {
-        const button = buttonRef.current!;
-        const level = levelRef.current!;
+        const root = rootRef.current!;
         const still = prefersReducedMotion();
         let shown = false;
         let atFooter = false;
         let readingOn = false;
         const wide = window.matchMedia(WIDE);
-        gsap.set(button, { autoAlpha: 0, scale: 0.6, y: 12 });
+        gsap.set(root, { autoAlpha: 0, scale: 0.6, y: 12, transformOrigin: "100% 100%" });
 
         const show = (visible: boolean) => {
             if (visible === shown) return;
             shown = visible;
             const vars = { autoAlpha: visible ? 1 : 0, scale: visible ? 1 : 0.6, y: visible ? 0 : 12 };
-            if (still) gsap.set(button, vars);
-            else gsap.to(button, { ...vars, duration: visible ? 0.6 : 0.35, ease: visible ? "back.out(1.7)" : "power2.in", overwrite: true });
+            if (still) gsap.set(root, vars);
+            else gsap.to(root, { ...vars, duration: visible ? 0.6 : 0.35, ease: visible ? "back.out(1.7)" : "power2.in", overwrite: true });
         };
 
-        // The level follows the scroll exactly (no easing to lag behind), from a full cup as Experience arrives to an
-        // empty one at the bottom of the page
+        // The level follows the scroll exactly (no easing to lag behind), from full as Experience arrives to empty
+        // at the bottom of the page. It's never hidden while its menu is open.
+        const drain = () => gsap.set(surfaceRef.current, { scale: 1 - progress.current, svgOrigin: "50 50" });
         const sync = (self: ScrollTrigger) => {
-            level.setAttribute("r", String(COFFEE_R * (1 - self.progress)));
-            show(self.scroll() >= self.start && !atFooter && (wide.matches || !readingOn));
+            progress.current = self.progress;
+            drain();
+            show(openRef.current || (self.scroll() >= self.start && !atFooter && (wide.matches || !readingOn)));
         };
         const trigger = ScrollTrigger.create({
             trigger: "#experience",
@@ -64,6 +75,7 @@ function CoffeeProgress(){
                 sync(trigger);
             },
         });
+        syncRef.current = () => sync(trigger);
         const onResize = () => sync(trigger);
         wide.addEventListener("change", onResize);
 
@@ -74,35 +86,103 @@ function CoffeeProgress(){
         };
     }, []);
 
+    // A new drink is a fresh cup at the same level, swapped in with a little wobble
+    const firstOrder = useRef(true);
+    useLayoutEffect(() => {
+        syncRef.current();
+        if (firstOrder.current) {
+            firstOrder.current = false;
+            return;
+        }
+        if (!prefersReducedMotion()) {
+            gsap.fromTo(iconRef.current, { rotation: -14, scale: 0.85 }, { rotation: 0, scale: 1, duration: 0.8, ease: "elastic.out(1, 0.4)" });
+        }
+    }, [order]);
+
+    // The menu opens over the cup with the current drink focused, and closes on a choice, Escape or a click
+    // anywhere else, handing focus back to the cup
+    useEffect(() => {
+        openRef.current = open;
+        syncRef.current();
+        const popover = popoverRef.current;
+        if (!open || !popover) return;
+
+        // Fade by opacity alone: a hidden element can't take focus, and the current drink needs it straight away
+        if (!prefersReducedMotion()) {
+            gsap.fromTo(popover, { opacity: 0, y: 8, scale: 0.96 }, { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: "power3.out" });
+        }
+        menuRef.current?.querySelector<HTMLButtonElement>("[aria-pressed='true']")?.focus();
+
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key !== "Escape") return;
+            setOpen(false);
+            buttonRef.current?.focus();
+        };
+        const onPointer = (e: PointerEvent) => {
+            if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+        };
+        document.addEventListener("keydown", onKey);
+        document.addEventListener("pointerdown", onPointer);
+        return () => {
+            document.removeEventListener("keydown", onKey);
+            document.removeEventListener("pointerdown", onPointer);
+        };
+    }, [open]);
+
+    const choose = (drink: DrinkId) => {
+        setCoffeeOrder(drink);
+        setOpen(false);
+        buttonRef.current?.focus();
+    };
+
+    const name = drinkName(order);
+
     return(
-        <button
-            ref={buttonRef}
-            type="button"
-            aria-label="Back to top"
-            title="Back to top"
-            onClick={() => scrollToHash("#top")}
-            className="fixed right-4 bottom-4 z-30 h-12 w-12 cursor-pointer rounded-full transition-[translate] duration-300 hover:-translate-y-1 sm:right-6 sm:bottom-6 sm:h-14 sm:w-14 focus-visible:outline-[#2a170c]"
-        >
-            <svg viewBox="0 0 100 100" aria-hidden="true" className="block h-full w-full overflow-visible drop-shadow-[0_4px_10px_rgb(43_29_18_/_0.18)]">
-                <defs>
-                    <radialGradient id={`${id}-coffee`} cx="50%" cy="50%" r="50%">
-                        <stop offset="0%" stopColor="#2a170c" />
-                        <stop offset="80%" stopColor="#1f1008" />
-                        <stop offset="100%" stopColor="#6b3d1c" />
-                    </radialGradient>
-                    <linearGradient id={`${id}-wall`} x1="0.15" y1="0.1" x2="0.85" y2="0.9">
-                        <stop offset="0%" stopColor="#cfcac4" />
-                        <stop offset="100%" stopColor="#ffffff" />
-                    </linearGradient>
-                </defs>
-                {/* Saucer (its hairline keeps it crisp over Contact's dark background too), handle, cup and coffee */}
-                <circle cx={C} cy={C} r={48} fill="#ffffff" stroke="#d8d4cf" strokeWidth={1} />
-                <rect x={C + 26} y={C - 6} width={18} height={12} rx={6} transform={`rotate(-35 ${C} ${C})`} fill="#ffffff" stroke="#d8d4cf" strokeWidth={1} />
-                <circle cx={C} cy={C} r={34} fill="#ffffff" stroke="#d8d4cf" strokeWidth={1} />
-                <circle cx={C} cy={C} r={30} fill={`url(#${id}-wall)`} />
-                <circle ref={levelRef} cx={C} cy={C} r={COFFEE_R} fill={`url(#${id}-coffee)`} />
-            </svg>
-        </button>
+        <div ref={rootRef} className="fixed right-4 bottom-4 z-30 sm:right-6 sm:bottom-6">
+            {open && (
+                <div
+                    ref={popoverRef}
+                    id={popoverId}
+                    role="dialog"
+                    aria-label="Your order"
+                    className="absolute right-0 bottom-full mb-3 w-[min(20rem,calc(100vw-2rem))] rounded-2xl border border-gray-200 bg-white p-4 shadow-[0_12px_40px_rgb(0_0_0/0.12)]"
+                >
+                    <p className="text-[0.625rem] font-medium tracking-widest text-gray-400 uppercase">Your order</p>
+                    <div className="mt-3">
+                        <DrinkPicker listRef={menuRef} size="compact" label="Change your coffee" value={order} onChoose={choose} />
+                    </div>
+                    <div className="mt-3 border-t border-gray-100 pt-3">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setOpen(false);
+                                scrollToHash("#top");
+                            }}
+                            className="group flex w-full cursor-pointer items-center justify-between rounded-lg px-1 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:text-black"
+                        >
+                            Back to top
+                            <span aria-hidden="true" className="transition-transform duration-300 group-hover:-translate-y-0.5">↑</span>
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            <button
+                ref={buttonRef}
+                type="button"
+                aria-label={`Your order: ${name}. Change it, or go back to the top`}
+                title={`Your order: ${name}`}
+                aria-haspopup="dialog"
+                aria-expanded={open}
+                aria-controls={open ? popoverId : undefined}
+                onClick={() => setOpen((value) => !value)}
+                className="block h-12 w-12 cursor-pointer rounded-full transition-[translate] duration-300 hover:-translate-y-1 sm:h-14 sm:w-14 focus-visible:outline-[#2a170c]"
+            >
+                <span ref={iconRef} className="block h-full w-full drop-shadow-[0_4px_10px_rgb(43_29_18/0.18)]">
+                    <DrinkIcon drink={order} surfaceRef={surfaceRef} className="h-full w-full" />
+                </span>
+            </button>
+        </div>
     );
 }
 

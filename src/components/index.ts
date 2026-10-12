@@ -20,4 +20,7 @@ export { default as AwakeStatus } from "./AwakeStatus";
 export { default as CoffeeCup } from "./CoffeeCup";
 export { default as ContactRow } from "./ContactRow";
 export { default as CoffeeGlass } from "./CoffeeGlass";
+export { default as CoffeeCursor } from "./CoffeeCursor";
+export { default as DrinkIcon } from "./DrinkIcon";
+export { default as DrinkPicker } from "./DrinkPicker";
 export { default as CoffeeProgress } from "./CoffeeProgress";
