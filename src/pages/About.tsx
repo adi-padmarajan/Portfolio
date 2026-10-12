@@ -1,20 +1,65 @@
 import { useLayoutEffect, useRef } from "react";
+import type { ReactNode } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
 import { MOTION_OK } from "../lib/motion";
-import { AboutFacts, AboutTitle, CircleButton, CoffeeCup, HeroDetail } from "../components";
+import { AboutTitle, CircleButton, CoffeeGlass } from "../components";
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
-// The next page of the story, in the hero's black and white. The cup poured in the hero sits beside the words,
-// and it's drunk while you read them.
+// Line icons for the traits, drawn on a 24-unit grid to match the type's weight
+const ICON = { fill: "none", stroke: "currentColor", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round" } as const;
+
+const TRAITS: { label: string; icon: ReactNode }[] = [
+    {
+        label: "6× Marathon Finisher",
+        icon: (
+            <>
+                <circle cx="15" cy="4.5" r="1.8" {...ICON} />
+                <path d="M13.5 8 L10.5 13 L14 15.5 L13 21" {...ICON} />
+                <path d="M10.5 13 L7 15 L4.5 14.5" {...ICON} />
+                <path d="M13.5 8 L17 10.5 L19.5 9.5" {...ICON} />
+                <path d="M12.5 9.5 L9 9.5 L7 11.5" {...ICON} />
+            </>
+        ),
+    },
+    {
+        label: "Builder",
+        icon: (
+            <>
+                <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" {...ICON} />
+                <path d="m3.3 7 8.7 5 8.7-5" {...ICON} />
+                <path d="M12 22V12" {...ICON} />
+            </>
+        ),
+    },
+    {
+        label: "Curious by nature",
+        icon: (
+            <>
+                <circle cx="12" cy="12" r="10" {...ICON} />
+                <path d="m16.24 7.76-1.8 5.41a2 2 0 0 1-1.27 1.27L7.76 16.24l1.8-5.41a2 2 0 0 1 1.27-1.27z" {...ICON} />
+            </>
+        ),
+    },
+];
+
+const DETAILS = [
+    { label: "Currently", value: "Software Developer at STEMCELL Technologies" },
+    { label: "Education", value: "BSc Computer Science, University of Victoria" },
+    { label: "Beyond code", value: "Photography, black coffee, and building things that matter" },
+];
+
+// The next page of the story, in the hero's black and white: what drives me, a glass of black coffee to drink
+// while you read it, and the details beneath.
 function About(){
     const sectionRef = useRef<HTMLDivElement>(null);
     const statementRef = useRef<HTMLParagraphElement>(null);
     const ruleRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLDivElement>(null);
-    const detailsRef = useRef<HTMLDivElement>(null);
+    const storyRef = useRef<HTMLDivElement>(null);
+    const detailsRef = useRef<HTMLDListElement>(null);
 
     useLayoutEffect(() => {
         const mm = gsap.matchMedia(sectionRef);
@@ -34,7 +79,8 @@ function About(){
                 },
             });
 
-            // The rule draws across, the button settles onto it, then the paragraph below follows
+            // The rule draws across and the button settles onto it; then the story, its traits and the details
+            // beside them follow one after another
             gsap.timeline({
                 defaults: { ease: "power3.out" },
                 scrollTrigger: {
@@ -44,16 +90,17 @@ function About(){
             })
               .from(ruleRef.current, { scaleX: 0, duration: 1.2, ease: "power4.inOut" })
               .from(buttonRef.current, { scale: 0.6, autoAlpha: 0, duration: 0.9, ease: "back.out(1.6)" }, "-=0.5")
-              .from(detailsRef.current?.firstElementChild?.children ?? [], { y: 24, autoAlpha: 0, duration: 0.9, stagger: 0.12 }, "-=0.6");
+              .from(storyRef.current?.children ?? [], { y: 24, autoAlpha: 0, duration: 0.9, stagger: 0.12 }, "-=0.6")
+              .from(detailsRef.current?.children ?? [], { y: 16, autoAlpha: 0, duration: 0.8, stagger: 0.1 }, "-=0.8");
 
             return () => split.revert();
         });
         return () => mm.revert();
     }, []);
 
-    // The same structure as Contact, so the two sections read as one system: a statement, a rule with the round
-    // button resting on it, and the details beneath. On large screens the cup sits beside the statement, as it does
-    // beside the hero's headline; on smaller ones it follows the words. The top padding clears the fixed navbar.
+    // The statement and the glass share the top; on smaller screens the glass follows the words. The round button
+    // rests on the rule beneath the glass. Below, the story and its traits sit beside the details, divided by a
+    // hairline that turns horizontal when they stack. The top padding clears the fixed navbar.
     return(
         <div
             ref={sectionRef}
@@ -62,40 +109,72 @@ function About(){
             <AboutTitle />
 
             <div className="mt-8 grid items-center gap-12 sm:mt-10 lg:grid-cols-12 lg:gap-10">
-                {/* The opening clause in black carries the statement; the rest recedes in grey */}
+                {/* The opening sentence in black carries the statement; the rest recedes in grey */}
                 <p
                     ref={statementRef}
-                    className="text-3xl leading-[1.15] font-medium tracking-tight text-gray-400 sm:text-5xl lg:col-span-8 lg:text-[3.25rem] lg:leading-[1.1]"
+                    className="text-3xl leading-[1.12] font-semibold tracking-tight text-gray-400 sm:text-5xl lg:col-span-8 lg:text-[3.5rem] lg:leading-[1.08]"
                 >
-                    <span className="text-black">I have always been drawn to a&nbsp;challenge,</span>{" "}
-                    whether it's turning ambitious ideas into something real or pushing my limits across 42.2 kilometres.
+                    <span className="text-black">I've always been drawn to a&nbsp;challenge.</span>{" "}
+                    Whether that means turning ambitious ideas into something real, or pushing my limits across
+                    42.2&nbsp;kilometres.
                 </p>
-                <div className="w-[min(60vw,30svh,16rem)] justify-self-center sm:w-[min(40vw,34svh,18rem)] lg:col-span-4 lg:w-full lg:max-w-sm lg:justify-self-end">
-                    <CoffeeCup drink />
-                </div>
-            </div>
 
-            {/* The button straddles the rule, as if it were resting on it */}
-            <div className="relative mt-20 sm:mt-28">
-                <div ref={ruleRef} className="h-px origin-left bg-gray-200" />
-                <div className="absolute top-1/2 right-0 -translate-y-1/2 sm:right-12 lg:right-24">
-                    <div ref={buttonRef}>
-                        <CircleButton href="#contact">Grab a coffee?</CircleButton>
+                {/* The glass, framed in a thin circle like a lens */}
+                <div className="w-[min(68vw,32svh,17rem)] justify-self-center sm:w-[min(44vw,36svh,20rem)] lg:col-span-4 lg:w-full lg:max-w-[22rem] lg:justify-self-end">
+                    <div className="aspect-square rounded-full border border-black p-[13%]">
+                        <CoffeeGlass />
                     </div>
                 </div>
             </div>
 
-            <div ref={detailsRef} className="mt-20 grid gap-14 sm:mt-28 md:grid-cols-12 md:gap-6">
-                <div className="space-y-8 md:col-span-5">
-                    <p className="text-lg leading-relaxed text-gray-600 sm:text-xl">
-                        From completing six full marathons to building products that solve real problems,
-                        I've learned to embrace the unfamiliar and enjoy the process of figuring things out.
+            {/* The button rests on the rule, centred beneath the glass on large screens */}
+            <div className="relative mt-14 grid sm:mt-16 lg:grid-cols-12 lg:gap-10">
+                <div ref={ruleRef} className="absolute inset-x-0 top-1/2 h-px origin-left bg-gray-200" />
+                <div
+                    ref={buttonRef}
+                    className="relative justify-self-end sm:mr-12 lg:col-span-4 lg:col-start-9 lg:mr-0 lg:w-full lg:max-w-[22rem] lg:justify-self-end"
+                >
+                    <div className="flex justify-center">
+                        <CircleButton href="#contact">Let's connect</CircleButton>
+                    </div>
+                </div>
+            </div>
+
+            <div className="mt-14 grid gap-12 sm:mt-16 md:grid-cols-12 md:gap-0">
+                <div ref={storyRef} className="md:col-span-7 md:pr-12 lg:pr-16">
+                    <p className="max-w-xl text-lg leading-relaxed text-gray-600 sm:text-xl">
+                        From completing six full marathons to building products that solve real problems, I've learned
+                        that progress comes from curiosity, consistency, and a willingness to figure things out.
                     </p>
-                    <HeroDetail label="Education">BSc Computer Science, University of Victoria</HeroDetail>
+                    {/* The traits run in a row divided by hairlines where there's room for all three, and stack otherwise */}
+                    <ul className="mt-8 flex flex-col gap-4 text-sm text-gray-600 sm:mt-10 sm:text-base xl:flex-row xl:items-center xl:gap-0">
+                        {TRAITS.map((trait, i) => (
+                            <li
+                                key={trait.label}
+                                className={`flex items-center gap-3 xl:py-1 ${i > 0 ? "xl:border-l xl:border-gray-200 xl:pl-6" : ""} ${i < TRAITS.length - 1 ? "xl:pr-6" : ""}`}
+                            >
+                                <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6 shrink-0 text-black">
+                                    {trait.icon}
+                                </svg>
+                                {trait.label}
+                            </li>
+                        ))}
+                    </ul>
                 </div>
-                <div className="md:col-span-6 md:col-start-7">
-                    <AboutFacts />
-                </div>
+
+                <dl
+                    ref={detailsRef}
+                    className="space-y-7 border-t border-gray-200 pt-10 md:col-span-5 md:border-t-0 md:border-l md:pt-0 md:pl-10 lg:pl-12"
+                >
+                    {DETAILS.map((detail) => (
+                        <div key={detail.label}>
+                            <dt className="text-[0.625rem] font-medium tracking-widest text-gray-400 uppercase sm:text-xs">
+                                {detail.label}
+                            </dt>
+                            <dd className="mt-2 text-base text-gray-700 sm:text-lg">{detail.value}</dd>
+                        </div>
+                    ))}
+                </dl>
             </div>
         </div>
     );
