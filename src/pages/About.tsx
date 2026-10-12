@@ -16,11 +16,13 @@ const TRAITS: { label: string; icon: ReactNode }[] = [
         label: "6× Marathon Finisher",
         icon: (
             <>
-                <circle cx="15" cy="4.5" r="1.8" {...ICON} />
-                <path d="M13.5 8 L10.5 13 L14 15.5 L13 21" {...ICON} />
-                <path d="M10.5 13 L7 15 L4.5 14.5" {...ICON} />
-                <path d="M13.5 8 L17 10.5 L19.5 9.5" {...ICON} />
-                <path d="M12.5 9.5 L9 9.5 L7 11.5" {...ICON} />
+                {/* A finisher's medal on its ribbon */}
+                <path d="M7.21 15 2.66 7.14a2 2 0 0 1 .13-2.2L4.4 2.8A2 2 0 0 1 6 2h12a2 2 0 0 1 1.6.8l1.6 2.14a2 2 0 0 1 .14 2.2L16.79 15" {...ICON} />
+                <path d="M11 12 5.12 2.2" {...ICON} />
+                <path d="m13 12 5.88-9.8" {...ICON} />
+                <path d="M8 7h8" {...ICON} />
+                <circle cx="12" cy="17" r="5" {...ICON} />
+                <path d="M12 18v-2h-.5" {...ICON} />
             </>
         ),
     },
@@ -119,9 +121,9 @@ function About(){
                     42.2&nbsp;kilometres.
                 </p>
 
-                {/* The glass, framed in a thin circle like a lens */}
+                {/* The glass of coffee, standing on its own beside the words */}
                 <div className="w-[min(68vw,32svh,17rem)] justify-self-center sm:w-[min(44vw,36svh,20rem)] lg:col-span-4 lg:w-full lg:max-w-[22rem] lg:justify-self-end">
-                    <div className="aspect-square rounded-full border border-black p-[13%]">
+                    <div className="px-[6%]">
                         <CoffeeGlass />
                     </div>
                 </div>
