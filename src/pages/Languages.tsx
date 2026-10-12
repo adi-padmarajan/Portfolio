@@ -1,7 +1,9 @@
 import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
-import CircleButton from "../components/CircleButton";
+import DrinkPicker from "../components/DrinkPicker";
 import { GREETINGS as greetings, GREETING_TEXT } from "../components/greetingText";
+import { getCoffeeOrder, setCoffeeOrder, useCoffeeOrder } from "../lib/coffeeOrder";
+import type { DrinkId } from "../lib/coffeeOrder";
 import { lockScroll, unlockScroll } from "../lib/smoothScroll";
 
 type LanguagesProps = {
@@ -15,16 +17,19 @@ type LanguagesProps = {
 const REST = [",", "I’m", "Adi."];
 
 // The opening scene: "hello" in the languages around me, then the greeting finishes its thought ("Hello, I'm Adi.")
-// and the visitor chooses when to begin. The overlay only lifts once they press Begin.
+// and asks how they take their coffee. Ordering a drink is how they come in: it's served, the overlay lifts, and
+// their drink keeps them company for the rest of the visit. Anyone just looking gets what I drink.
 function Languages({ onReveal, onComplete }: LanguagesProps){
     const overlayRef = useRef<HTMLDivElement>(null);
     const wordRefs = useRef<HTMLSpanElement[]>([]);
     const introRef = useRef<HTMLDivElement>(null);
     const helloRef = useRef<HTMLSpanElement>(null);
     const restRefs = useRef<HTMLSpanElement[]>([]);
-    const beginRef = useRef<HTMLDivElement>(null);
-    // Set once the introduction has landed; lifts the overlay
-    const exitRef = useRef<(() => void) | null>(null);
+    const orderRef = useRef<HTMLDivElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
+    // Set once the introduction has landed; serves the chosen drink and lifts the overlay
+    const exitRef = useRef<((drink: DrinkId) => void) | null>(null);
+    const order = useCoffeeOrder();
 
     useLayoutEffect(() => {
         lockScroll();
@@ -58,22 +63,42 @@ function Languages({ onReveal, onComplete }: LanguagesProps){
             }, "+=0.8")
               .to(helloRef.current, { x: 0, y: 0, scale: 1, duration: 1.1, ease: "power4.inOut" })
               .to(restRefs.current, { yPercent: 0, duration: 1, stagger: 0.12, ease: "power4.out" }, "-=0.55")
-              // Then the invitation to begin; Enter works too
-              .fromTo(beginRef.current, { autoAlpha: 0, scale: 0.6 }, { autoAlpha: 1, scale: 1, duration: 0.9, ease: "back.out(1.6)" }, "-=0.4")
+              // Then the question, and the menu set out one cup at a time
+              .set(orderRef.current, { autoAlpha: 1 }, "-=0.3")
+              .from(orderRef.current!.querySelector("[data-question]"), { y: 16, autoAlpha: 0, duration: 0.7, ease: "power3.out" }, "<")
+              .from(menuRef.current!.children, { y: 24, autoAlpha: 0, duration: 0.7, stagger: 0.08, ease: "back.out(1.6)" }, "-=0.4")
+              .from(orderRef.current!.querySelector("[data-skip]"), { autoAlpha: 0, duration: 0.6 }, "-=0.2")
               .add(() => { exitRef.current = exit; });
 
-            function exit(){
+            // Serve the order: the other cups step back, the chosen one slides to the middle and is lifted
+            // towards you, and then the overlay rises
+            function exit(drink: DrinkId){
                 exitRef.current = null;
+                setCoffeeOrder(drink);
+                const items = gsap.utils.toArray<HTMLElement>(menuRef.current!.children);
+                const chosen = items.find((item) => item.dataset.drink === drink) ?? items[0];
+                const menu = menuRef.current!.getBoundingClientRect();
+                const cup = chosen.getBoundingClientRect();
                 gsap.timeline()
-                  .to(introRef.current, { y: -40, autoAlpha: 0, duration: 0.6, ease: "power3.in" })
+                  .to(items.filter((item) => item !== chosen), { y: 16, autoAlpha: 0, duration: 0.4, stagger: 0.04, ease: "power2.in" })
+                  .to(orderRef.current!.querySelectorAll("[data-question], [data-skip]"), { autoAlpha: 0, duration: 0.3 }, 0)
+                  .to(chosen, {
+                    x: menu.left + menu.width / 2 - (cup.left + cup.width / 2),
+                    y: -12,
+                    scale: 1.35,
+                    duration: 0.7,
+                    ease: "power3.inOut",
+                }, 0.15)
+                  .to(introRef.current, { y: -40, autoAlpha: 0, duration: 0.6, ease: "power3.in" }, "+=0.35")
                   .add(onReveal, "-=0.2")
                   .to(overlayRef.current, { yPercent: -100, duration: 1, ease: "power4.inOut" }, "<")
                   .add(onComplete);
             }
         });
 
+        // Enter, before anything's been picked, orders the usual
         const handleKey = (e: KeyboardEvent) => {
-            if (e.key === "Enter" && e.target === document.body) exitRef.current?.();
+            if (e.key === "Enter" && e.target === document.body) exitRef.current?.(getCoffeeOrder());
         };
         window.addEventListener("keydown", handleKey);
 
@@ -129,8 +154,27 @@ function Languages({ onReveal, onComplete }: LanguagesProps){
                             ))}
                         </span>
                     </p>
-                    <div ref={beginRef} className="invisible mt-14 sm:mt-20">
-                        <CircleButton onClick={() => exitRef.current?.()}>Begin</CircleButton>
+                    <div ref={orderRef} className="invisible mt-12 flex flex-col items-center sm:mt-16">
+                        <p data-question className="text-base font-medium tracking-tight text-gray-500 sm:text-xl">
+                            How do you take your coffee?
+                        </p>
+                        <div className="mt-6 sm:mt-8">
+                            <DrinkPicker
+                                listRef={menuRef}
+                                label="Choose your coffee"
+                                value={order}
+                                onChoose={(drink) => exitRef.current?.(drink)}
+                            />
+                        </div>
+                        <button
+                            data-skip
+                            type="button"
+                            onClick={() => exitRef.current?.(getCoffeeOrder())}
+                            className="group mt-6 inline-flex cursor-pointer items-center gap-2 text-xs font-medium tracking-widest text-gray-400 uppercase transition-colors hover:text-black sm:mt-8"
+                        >
+                            Just looking
+                            <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+                        </button>
                     </div>
                 </div>
             </div>
