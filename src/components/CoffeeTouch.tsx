@@ -18,7 +18,8 @@ function CoffeeTouch(){
         const layer = layerRef.current;
         if (!layer || !window.matchMedia(MOTION_OK).matches) return;
 
-        let start: { id: number; x: number; y: number; at: number } | null = null;
+        // Each finger on the screen is its own possible tap, so a second touch never overwrites or cancels the first
+        const touches = new Map<number, { x: number; y: number; at: number }>();
 
         const splash = (x: number, y: number) => {
             const color = drinkColor(getCoffeeOrder());
@@ -64,19 +65,20 @@ function CoffeeTouch(){
 
         const onDown = (e: PointerEvent) => {
             if (e.pointerType === "mouse") return;
-            start = { id: e.pointerId, x: e.clientX, y: e.clientY, at: e.timeStamp };
+            touches.set(e.pointerId, { x: e.clientX, y: e.clientY, at: e.timeStamp });
         };
         const onUp = (e: PointerEvent) => {
-            if (!start || e.pointerId !== start.id) return;
+            const start = touches.get(e.pointerId);
+            if (!start) return;
+            touches.delete(e.pointerId);
             const still = Math.hypot(e.clientX - start.x, e.clientY - start.y) < TAP_SLOP;
             // A beat later, so a tap that orders a new drink (on the click that follows) splashes in the new one
             if (still && e.timeStamp - start.at < TAP_TIME) {
                 const { clientX, clientY } = e;
                 window.setTimeout(() => splash(clientX, clientY), 0);
             }
-            start = null;
         };
-        const onCancel = () => { start = null; };
+        const onCancel = (e: PointerEvent) => { touches.delete(e.pointerId); };
 
         window.addEventListener("pointerdown", onDown, { passive: true });
         window.addEventListener("pointerup", onUp, { passive: true });
