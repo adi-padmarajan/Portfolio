@@ -109,15 +109,17 @@ function Languages({ onReveal, onComplete }: LanguagesProps){
         };
     }, [onReveal, onComplete]);
 
+    // If a screen is ever too short for the whole scene, the overlay scrolls rather than cutting the order off
     return (
         <div
             ref={overlayRef}
             role="dialog"
             aria-modal="true"
             aria-label="Introduction"
-            className="fixed inset-0 z-100 grid place-items-center bg-white px-6"
+            data-lenis-prevent
+            className="fixed inset-0 z-100 overflow-y-auto overscroll-contain bg-white"
         >
-            <div className="grid place-items-center">
+            <div className="grid min-h-full place-items-center px-6 py-10 short:py-4">
                 <div aria-hidden="true" className="grid place-items-center [grid-area:1/1]">
                     {greetings.map((greeting, i) => (
                         <span
@@ -154,11 +156,11 @@ function Languages({ onReveal, onComplete }: LanguagesProps){
                             ))}
                         </span>
                     </p>
-                    <div ref={orderRef} className="invisible mt-12 flex flex-col items-center sm:mt-16">
-                        <p data-question className="text-base font-medium tracking-tight text-gray-500 sm:text-xl">
+                    <div ref={orderRef} className="invisible mt-10 flex flex-col items-center sm:mt-16 short:mt-4">
+                        <p data-question className="text-base font-medium tracking-tight text-gray-500 sm:text-xl short:text-base">
                             How do you take your coffee?
                         </p>
-                        <div className="mt-6 sm:mt-8">
+                        <div className="mt-6 sm:mt-8 short:mt-2">
                             <DrinkPicker
                                 listRef={menuRef}
                                 label="Choose your coffee"
@@ -170,7 +172,7 @@ function Languages({ onReveal, onComplete }: LanguagesProps){
                             data-skip
                             type="button"
                             onClick={() => exitRef.current?.(getCoffeeOrder())}
-                            className="group mt-6 inline-flex cursor-pointer items-center gap-2 text-xs font-medium tracking-widest text-gray-400 uppercase transition-colors hover:text-black sm:mt-8"
+                            className="group mt-6 inline-flex cursor-pointer items-center gap-2 py-2 text-xs font-medium tracking-widest text-gray-400 uppercase transition-colors hover:text-black sm:mt-8 short:mt-1"
                         >
                             Just looking
                             <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">→</span>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { CoffeeCursor, CoffeeProgress, Navbar } from "./components";
+import { CoffeeCursor, CoffeeProgress, CoffeeTouch, Navbar } from "./components";
 import { prefersReducedMotion } from "./lib/motion";
 import { initSmoothScroll } from "./lib/smoothScroll";
 import { About, Contact, Experience, Home, Languages, Projects } from "./pages/";
@@ -35,6 +35,7 @@ function App() {
 
   return (
     <>
+      <CoffeeTouch />
       {showIntro && <Languages onReveal={handleReveal} onComplete={handleIntroComplete} />}
       {showSite && (
         <>

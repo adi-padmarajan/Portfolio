@@ -1,12 +1,13 @@
 import { useSyncExternalStore } from "react";
 
-// The menu a visitor orders from in the intro, and can change from the corner cup
+// The menu a visitor orders from in the intro, and can change from the corner cup. Each drink's colour is the one
+// its ripples take when a touch screen is tapped.
 export const DRINKS = [
-    { id: "black", name: "Black", note: "Adi’s" },
-    { id: "espresso", name: "Espresso" },
-    { id: "latte", name: "Latte" },
-    { id: "cappuccino", name: "Cappuccino" },
-    { id: "iced", name: "Iced" },
+    { id: "black", name: "Black", note: "Adi’s", color: "#2a170c" },
+    { id: "espresso", name: "Espresso", color: "#b07440" },
+    { id: "latte", name: "Latte", color: "#c39668" },
+    { id: "cappuccino", name: "Cappuccino", color: "#b8916a" },
+    { id: "iced", name: "Iced", color: "#3d2313" },
 ] as const;
 
 export type DrinkId = (typeof DRINKS)[number]["id"];
@@ -59,4 +60,8 @@ export function useCoffeeOrder(){
 
 export function drinkName(drink: DrinkId){
     return DRINKS.find((d) => d.id === drink)!.name;
+}
+
+export function drinkColor(drink: DrinkId){
+    return DRINKS.find((d) => d.id === drink)!.color;
 }
