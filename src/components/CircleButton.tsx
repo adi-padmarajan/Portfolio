@@ -19,7 +19,7 @@ type CircleButtonProps = {
 // A round button that grows slightly on hover; light and large versions sit on the dark Contact section.
 // It's a link when given an href, and a plain button when given an onClick.
 function CircleButton({ href, onClick, children, variant = "dark", size = "md" }: CircleButtonProps){
-    const className = `flex items-center justify-center rounded-full font-medium transition-transform duration-300 hover:scale-105 ${VARIANTS[variant]} ${SIZES[size]}`;
+    const className = `flex items-center justify-center rounded-full px-3 text-center leading-tight font-medium transition-transform duration-300 hover:scale-105 ${VARIANTS[variant]} ${SIZES[size]}`;
 
     if (href !== undefined) {
         return <a href={href} className={className}>{children}</a>;

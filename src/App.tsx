@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Navbar } from "./components";
+import { CoffeeProgress, Navbar } from "./components";
 import { prefersReducedMotion } from "./lib/motion";
 import { initSmoothScroll } from "./lib/smoothScroll";
 import { About, Contact, Experience, Home, Languages, Projects } from "./pages/";
@@ -39,6 +39,7 @@ function App() {
       {showSite && (
         <>
           <Navbar />
+          <CoffeeProgress />
           <main id="top">
             <Home introActive={showIntro} />
             <section id="about">

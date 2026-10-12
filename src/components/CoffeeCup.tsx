@@ -29,12 +29,14 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 type CoffeeCupProps = {
     // Seconds before the cup is set down, so the hero can choreograph it with the words
     delay?: number;
+    // Drink it instead of pouring it: the cup arrives full and empties a sip at a time as it scrolls past
+    drink?: boolean;
 };
 
-// A cup of black coffee seen from above. It's set down on its saucer and filled from directly overhead, the last
-// drop lands, and it's left steaming. The surface catches the light as the cursor moves, and pressing the cup sends
-// rings out from the middle, like a knock on the table.
-function CoffeeCup({ delay = 0 }: CoffeeCupProps){
+// A cup of black coffee seen from above. In the hero it's set down on its saucer and filled from directly overhead,
+// the last drop lands, and it's left steaming; further down the page it's drunk while you read. The surface catches
+// the light as the cursor moves, and pressing the cup sends rings out from the middle, like a knock on the table.
+function CoffeeCup({ delay = 0, drink = false }: CoffeeCupProps){
     const id = useId();
     // Read once: without motion the cup is just a picture, so it isn't offered as a button
     const [interactive] = useState(() => !prefersReducedMotion());
@@ -90,35 +92,78 @@ function CoffeeCup({ delay = 0 }: CoffeeCupProps){
                 });
             };
 
-            // While the cup fills, the stream from overhead keeps the middle of the surface gently stirring
-            const filling = gsap.timeline({ repeat: 4 })
-              .add(() => ripple(0.28, 1))
-              .to({}, { duration: 0.36 });
-
-            // The level: the clip that shapes the coffee and the amber line along its edge, which rise together
+            // The level: the clip that shapes the coffee and the amber line along its edge, which move together
             const level = [levelRef.current, edgeRef.current];
+            const animations: gsap.core.Animation[] = [];
+            const triggers: ScrollTrigger[] = [];
 
-            // Set the cup down on its saucer (the shadow tightening as it lands). Then it fills from directly
-            // overhead: a thin film of coffee spreads across the floor, translucent amber at first, and the level
-            // rises evenly up the wall as it deepens to near-black. Last, one drop falls (shrinking as it falls away
-            // from us), lands dead centre with a little rebound and a set of rings, and the steam rises.
-            const intro = gsap.timeline({ delay, defaults: { ease: "power3.out" } })
-              .from(button, { autoAlpha: 0, duration: 0.8 })
-              .from(cupRef.current, { scale: 1.12, y: -10, duration: 1.1 }, 0)
-              .from(shadowRef.current, { scale: 1.25, x: 18, y: 24, opacity: 0, duration: 1.1 }, 0)
-              .from([liquidRef.current, edgeRef.current], { opacity: 0, duration: 0.25, ease: "sine.out" }, 0.9)
-              .fromTo(tintRef.current, { opacity: 0.6 }, { opacity: 0, duration: 2.2, ease: "sine.in" }, 0.9)
-              .add(filling, 1.0)
-              .fromTo(level, { attr: { r: FLOOR_R } }, { attr: { r: COFFEE_R }, duration: 1.9, ease: "sine.inOut" }, 1.1)
-              .from(lightRef.current, { autoAlpha: 0, duration: 1, ease: "sine.out" }, 2.6)
-              .fromTo(dropRef.current, { autoAlpha: 0, scale: 2.4 }, { autoAlpha: 1, duration: 0.12, ease: "none" }, 3.15)
-              .to(dropRef.current, { scale: 0.5, duration: 0.42, ease: "power2.in" }, 3.15)
-              .set(dropRef.current, { autoAlpha: 0 }, 3.57)
-              .add(() => ripple(0.85), 3.57)
-              .fromTo(reboundRef.current, { scale: 0, autoAlpha: 1 }, { scale: 1, duration: 0.18, ease: "power2.out" }, 3.6)
-              .to(reboundRef.current, { scale: 0, autoAlpha: 0, duration: 0.3, ease: "power2.in" }, 3.78)
-              .from(steamRef.current, { autoAlpha: 0, duration: 1.6, ease: "sine.inOut" }, 3.8)
-              .add(() => { filled = true; });
+            if (drink) {
+                filled = true;
+
+                // It's set down on its saucer as it scrolls into view, already full and steaming
+                animations.push(
+                    gsap.timeline({ defaults: { ease: "power3.out" }, scrollTrigger: { trigger: button, start: "top 85%" } })
+                      .from(button, { autoAlpha: 0, duration: 0.8 })
+                      .from(cupRef.current, { scale: 1.12, y: -10, duration: 1.1 }, 0)
+                      .from(shadowRef.current, { scale: 1.25, x: 18, y: 24, opacity: 0, duration: 1.1 }, 0),
+                );
+
+                // Then it's drunk while you read, at the pace of the scroll: three sips, each lowering the level down
+                // the tapering wall with a pause between, and a last one that leaves only a film on the floor. The
+                // steam thins as it goes. Scrolling back up pours it back.
+                const sips = [0.1, 0.35, 0.6, 0.82];
+                const drinking = gsap.timeline({ paused: true, defaults: { ease: "sine.inOut" } })
+                  .to(level, { attr: { r: 92 }, duration: 0.15 }, sips[0])
+                  .to(level, { attr: { r: 84 }, duration: 0.15 }, sips[1])
+                  .to(level, { attr: { r: FLOOR_R }, duration: 0.15 }, sips[2])
+                  .to(liquidRef.current, { opacity: 0.22, duration: 0.13 }, sips[3])
+                  .to(edgeRef.current, { opacity: 0, duration: 0.13 }, sips[3])
+                  .to(steamRef.current, { autoAlpha: 0, duration: 0.5, ease: "none" }, 0.3)
+                  .to({}, { duration: 0.05 }, 0.95);
+                animations.push(drinking);
+
+                // Each sip stirs the surface (only on the way down; pouring back is quiet)
+                let progress = 0;
+                triggers.push(ScrollTrigger.create({
+                    trigger: button,
+                    start: "top 70%",
+                    end: "bottom 20%",
+                    scrub: 0.8,
+                    animation: drinking,
+                    onUpdate: (self) => {
+                        if (sips.some((at) => progress < at && self.progress >= at)) ripple(0.5, 2);
+                        progress = self.progress;
+                    },
+                }));
+            } else {
+                // While the cup fills, the stream from overhead keeps the middle of the surface gently stirring
+                const filling = gsap.timeline({ repeat: 4 })
+                  .add(() => ripple(0.28, 1))
+                  .to({}, { duration: 0.36 });
+
+                // Set the cup down on its saucer (the shadow tightening as it lands). Then it fills from directly
+                // overhead: a thin film of coffee spreads across the floor, translucent amber at first, and the level
+                // rises evenly up the wall as it deepens to near-black. Last, one drop falls (shrinking as it falls away
+                // from us), lands dead centre with a little rebound and a set of rings, and the steam rises.
+                const intro = gsap.timeline({ delay, defaults: { ease: "power3.out" } })
+                  .from(button, { autoAlpha: 0, duration: 0.8 })
+                  .from(cupRef.current, { scale: 1.12, y: -10, duration: 1.1 }, 0)
+                  .from(shadowRef.current, { scale: 1.25, x: 18, y: 24, opacity: 0, duration: 1.1 }, 0)
+                  .from([liquidRef.current, edgeRef.current], { opacity: 0, duration: 0.25, ease: "sine.out" }, 0.9)
+                  .fromTo(tintRef.current, { opacity: 0.6 }, { opacity: 0, duration: 2.2, ease: "sine.in" }, 0.9)
+                  .add(filling, 1.0)
+                  .fromTo(level, { attr: { r: FLOOR_R } }, { attr: { r: COFFEE_R }, duration: 1.9, ease: "sine.inOut" }, 1.1)
+                  .from(lightRef.current, { autoAlpha: 0, duration: 1, ease: "sine.out" }, 2.6)
+                  .fromTo(dropRef.current, { autoAlpha: 0, scale: 2.4 }, { autoAlpha: 1, duration: 0.12, ease: "none" }, 3.15)
+                  .to(dropRef.current, { scale: 0.5, duration: 0.42, ease: "power2.in" }, 3.15)
+                  .set(dropRef.current, { autoAlpha: 0 }, 3.57)
+                  .add(() => ripple(0.85), 3.57)
+                  .fromTo(reboundRef.current, { scale: 0, autoAlpha: 1 }, { scale: 1, duration: 0.18, ease: "power2.out" }, 3.6)
+                  .to(reboundRef.current, { scale: 0, autoAlpha: 0, duration: 0.3, ease: "power2.in" }, 3.78)
+                  .from(steamRef.current, { autoAlpha: 0, duration: 1.6, ease: "sine.inOut" }, 3.8)
+                  .add(() => { filled = true; });
+                animations.push(intro, filling);
+            }
 
             // Each wisp rises, sways and fades in its own rhythm
             const loops: gsap.core.Animation[] = wisps.map((wisp, i) =>
@@ -197,14 +242,14 @@ function CoffeeCup({ delay = 0 }: CoffeeCupProps){
                 button.removeEventListener("pointerleave", onLeave);
                 button.removeEventListener("click", clink);
                 loops.forEach((loop) => loop.kill());
-                intro.kill();
-                filling.kill();
+                animations.forEach((animation) => animation.kill());
+                triggers.forEach((trigger) => trigger.kill());
                 visibility.kill();
                 ripplesRef.current?.replaceChildren();
             };
         });
         return () => mm.revert();
-    }, [delay]);
+    }, [delay, drink]);
 
     const drawing = (
         <svg viewBox={`0 0 ${SIZE} ${SIZE}`} aria-hidden="true" className="block h-auto w-full overflow-visible">
