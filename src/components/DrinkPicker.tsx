@@ -6,7 +6,8 @@ import type { DrinkId } from "../lib/coffeeOrder";
 
 const SIZES = {
     // Three over two on phones, all five in a row from sm up
-    intro: { layout: "flex flex-wrap justify-center max-w-[16rem] gap-x-4 gap-y-6 sm:max-w-none sm:gap-x-8", item: "min-w-16", icon: "w-16 sm:w-20", label: "text-xs sm:text-sm" },
+    // (and, on phones turned sideways, a smaller row that leaves room for the greeting above it)
+    intro: { layout: "flex flex-wrap justify-center max-w-[16rem] gap-x-4 gap-y-6 sm:max-w-none sm:gap-x-8 short:gap-x-6", item: "min-w-16", icon: "w-16 sm:w-20 short:w-12", label: "text-xs sm:text-sm short:text-xs" },
     // All five in one row, even inside a narrow phone's menu
     compact: { layout: "grid grid-cols-5 gap-x-1", item: "min-w-0", icon: "w-10", label: "text-[0.625rem]" },
 };
@@ -56,7 +57,11 @@ function DrinkPicker({ value, onChoose, size = "intro", label, listRef }: DrinkP
                         data-drink={drink.id}
                         aria-pressed={chosen}
                         tabIndex={chosen ? 0 : -1}
-                        onClick={() => onChoose(drink.id)}
+                        onClick={() => {
+                            // A tiny buzz to confirm the order, where the phone supports it (Android; iOS ignores it)
+                            if (window.matchMedia("(pointer: coarse)").matches) navigator.vibrate?.(10);
+                            onChoose(drink.id);
+                        }}
                         className={`group flex ${sizing.item} cursor-pointer flex-col items-center gap-2 rounded-2xl px-1 py-2 touch-manipulation [-webkit-tap-highlight-color:transparent]`}
                     >
                         <span className="relative block">

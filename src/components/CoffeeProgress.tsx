@@ -29,6 +29,8 @@ function CoffeeProgress(){
     const popoverRef = useRef<HTMLDivElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
     const progress = useRef(0);
+    // Set when the menu was dismissed by pressing somewhere else, so focus can be put back once that press is done
+    const closedOutside = useRef(false);
     const syncRef = useRef<() => void>(() => {});
 
     useLayoutEffect(() => {
@@ -104,6 +106,19 @@ function CoffeeProgress(){
     useEffect(() => {
         openRef.current = open;
         syncRef.current();
+
+        // A press elsewhere closes the menu and removes whatever had focus inside it. Once that press has given
+        // focus to whatever it landed on (a link, a field), leave it there; if it landed on nothing focusable,
+        // focus would be stranded on the page, so it goes back to the cup.
+        if (!open && closedOutside.current) {
+            closedOutside.current = false;
+            const restore = window.setTimeout(() => {
+                const active = document.activeElement;
+                if (!active || active === document.body) buttonRef.current?.focus({ preventScroll: true });
+            }, 0);
+            return () => window.clearTimeout(restore);
+        }
+
         const popover = popoverRef.current;
         if (!open || !popover) return;
 
@@ -119,7 +134,9 @@ function CoffeeProgress(){
             buttonRef.current?.focus();
         };
         const onPointer = (e: PointerEvent) => {
-            if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+            if (rootRef.current?.contains(e.target as Node)) return;
+            closedOutside.current = true;
+            setOpen(false);
         };
         document.addEventListener("keydown", onKey);
         document.addEventListener("pointerdown", onPointer);

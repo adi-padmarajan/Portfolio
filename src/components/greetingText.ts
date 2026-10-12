@@ -1,5 +1,7 @@
-// Type style for the intro's greetings
-export const GREETING_TEXT = "whitespace-nowrap text-5xl font-extrabold tracking-tight text-black sm:text-7xl lg:text-8xl";
+// Type style for the intro's greetings: on phones it grows with the screen (the widest greeting stays well inside
+// even a 320px one), and on phones turned sideways it's scaled down to leave room for the coffee order below
+export const GREETING_TEXT =
+    "whitespace-nowrap text-[clamp(2.5rem,min(13vw,7.5svh),4.5rem)] font-extrabold tracking-tight text-black sm:text-7xl lg:text-8xl short:text-[clamp(2.25rem,9svh,3.25rem)]";
 
 // "Hello" in the languages around me, shared by the intro (which ends on English) and the Contact headline
 export const GREETINGS = [
