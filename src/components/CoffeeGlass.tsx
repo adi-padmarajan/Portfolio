@@ -12,7 +12,8 @@ const FLOOR = 138;
 const TOP_HALF = 35;
 const FLOOR_HALF = 29.5;
 // Where the glass pivots when it's tipped for a sip: the middle of its base
-const BASE = "100 158";
+const PIVOT = { x: 100, y: 158 };
+const BASE = `${PIVOT.x} ${PIVOT.y}`;
 
 // The coffee's level, as the height of its surface: full near the rim, down to a last film on the floor
 const FULL = 68;
@@ -21,6 +22,28 @@ const DREGS = 136;
 
 /** Half the inner glass's width at a given height, since its wall tapers towards the floor. */
 const halfWidthAt = (y: number) => TOP_HALF - ((y - TOP) * (TOP_HALF - FLOOR_HALF)) / (FLOOR - TOP);
+
+/**
+ * Where a level surface at height y meets the inner walls while the glass is tipped by some degrees about its
+ * base: the walls turn with the glass but the surface stays level, so it spans a different stretch of glass.
+ * Returns the left and right points where the surface touches the walls.
+ */
+function wallsAt(y: number, degrees: number){
+    const turn = (degrees * Math.PI) / 180;
+    const cos = Math.cos(turn);
+    const sin = Math.sin(turn);
+    const rotate = (x: number, py: number) => ({
+        x: PIVOT.x + (x - PIVOT.x) * cos - (py - PIVOT.y) * sin,
+        y: PIVOT.y + (x - PIVOT.x) * sin + (py - PIVOT.y) * cos,
+    });
+    // Each wall is the straight line from the rim down to where it starts to round into the floor
+    const cross = (side: -1 | 1) => {
+        const top = rotate(100 + side * TOP_HALF, TOP);
+        const bottom = rotate(100 + side * FLOOR_HALF, FLOOR - 8);
+        return top.x + ((y - top.y) / (bottom.y - top.y)) * (bottom.x - top.x);
+    };
+    return { left: cross(-1), right: cross(1) };
+}
 
 // Soft wisps of steam curling up off the rim
 const STEAM = [
@@ -40,6 +63,7 @@ function CoffeeGlass(){
     const glassRef = useRef<SVGGElement>(null);
     const levelRef = useRef<SVGGElement>(null);
     const liquidRef = useRef<SVGRectElement>(null);
+    const edgesRef = useRef<SVGRectElement>(null);
     const surfaceRef = useRef<SVGEllipseElement>(null);
     const steamRef = useRef<SVGGElement>(null);
 
@@ -51,14 +75,21 @@ function CoffeeGlass(){
             const wisps = gsap.utils.toArray<SVGPathElement>(steamRef.current!.children);
             gsap.set([glassRef.current, levelRef.current], { svgOrigin: BASE });
 
-            // The coffee's surface: the liquid fills from the surface down, and the crema ellipse narrows with the
-            // tapering wall as the level drops
+            // The coffee fills from its surface down (the amber at its edges with it, so nothing tints the empty
+            // glass above), and the crema always spans exactly wall to wall: narrower as the level drops down the
+            // tapering wall, and shifted to wherever the walls meet it while the glass is tipped
             const level = { y: FULL };
+            let surfaceX = 100;
             const setLevel = () => {
-                liquidRef.current!.setAttribute("y", String(level.y));
-                liquidRef.current!.setAttribute("height", String(FLOOR + 4 - level.y));
+                for (const rect of [liquidRef.current!, edgesRef.current!]) {
+                    rect.setAttribute("y", String(level.y));
+                    rect.setAttribute("height", String(FLOOR + 12 - level.y));
+                }
+                const { left, right } = wallsAt(level.y, Number(gsap.getProperty(glassRef.current, "rotation")));
+                surfaceX = (left + right) / 2;
+                surfaceRef.current!.setAttribute("cx", String(surfaceX));
                 surfaceRef.current!.setAttribute("cy", String(level.y));
-                surfaceRef.current!.setAttribute("rx", String(halfWidthAt(level.y)));
+                surfaceRef.current!.setAttribute("rx", String((right - left) / 2));
             };
             setLevel();
 
@@ -70,18 +101,18 @@ function CoffeeGlass(){
             // Each sip tips the glass towards you while the coffee inside stays level (it turns the other way by
             // the same amount), lowers the level, and sets the glass back down. The steam thins as it goes, and
             // the last sip leaves only a film.
-            const drinking = gsap.timeline({ paused: true, defaults: { ease: "sine.inOut" } });
+            const drinking = gsap.timeline({ paused: true, defaults: { ease: "sine.inOut" }, onUpdate: setLevel });
             SIPS.forEach((y, i) => {
                 const at = 0.08 + i * 0.26;
                 drinking
                   .to(glassRef.current, { rotate: -9, duration: 0.07 }, at)
                   .to(levelRef.current, { rotate: 9, duration: 0.07 }, at)
-                  .to(level, { y, duration: 0.1, onUpdate: setLevel }, at + 0.04)
+                  .to(level, { y, duration: 0.1 }, at + 0.04)
                   .to(glassRef.current, { rotate: 0, duration: 0.08 }, at + 0.12)
                   .to(levelRef.current, { rotate: 0, duration: 0.08 }, at + 0.12);
             });
             drinking
-              .to(level, { y: DREGS, duration: 0.08, onUpdate: setLevel }, 0.88)
+              .to(level, { y: DREGS, duration: 0.08 }, 0.88)
               .to(liquidRef.current, { opacity: 0.3, duration: 0.08 }, 0.88)
               .to(surfaceRef.current, { opacity: 0, duration: 0.08 }, 0.88)
               .to(steamRef.current, { autoAlpha: 0, duration: 0.6, ease: "none" }, 0.3)
@@ -112,7 +143,7 @@ function CoffeeGlass(){
             });
 
             // A press swirls the coffee: it sloshes to one side and rocks back and forth until it settles
-            const swirl = () => gsap.fromTo(surfaceRef.current, { rotate: 7, svgOrigin: `100 ${level.y}` }, {
+            const swirl = () => gsap.fromTo(surfaceRef.current, { rotate: 7, svgOrigin: `${surfaceX} ${level.y}` }, {
                 rotate: 0,
                 duration: 1.6,
                 ease: "elastic.out(1.1, 0.25)",
@@ -190,8 +221,8 @@ function CoffeeGlass(){
                 {/* The coffee, held inside the inner wall */}
                 <g clipPath={`url(#${id}-inside)`}>
                     <g ref={levelRef}>
-                        <rect ref={liquidRef} x="40" y={FULL} width="120" height={FLOOR + 4 - FULL} fill={`url(#${id}-coffee)`} />
-                        <rect x="40" y="40" width="120" height="120" fill={`url(#${id}-edges)`} />
+                        <rect ref={liquidRef} x="40" y={FULL} width="120" height={FLOOR + 12 - FULL} fill={`url(#${id}-coffee)`} />
+                        <rect ref={edgesRef} x="40" y={FULL} width="120" height={FLOOR + 12 - FULL} fill={`url(#${id}-edges)`} />
                         <ellipse ref={surfaceRef} cx="100" cy={FULL} rx={halfWidthAt(FULL)} ry="4" fill={`url(#${id}-crema)`} />
                     </g>
                 </g>
